@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android"
+    android:opacity="opaque">
+
+    <item
+        android:width="2000dp"
+        android:height="2000dp"
+        android:drawable="@color/whiteBackground"/>
+
+    <item
+        android:gravity="center"
+        android:width="200dp"
+        android:height="72dp"
+        android:drawable="@drawable/logo_sp"/>
+
+</layer-list>

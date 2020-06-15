@@ -1,0 +1,7 @@
+build/
+app/release/
+.gradle/
+.idea/
+*.iml
+local.properties
+voicesdk/voicesdk-aar-full-release.aar

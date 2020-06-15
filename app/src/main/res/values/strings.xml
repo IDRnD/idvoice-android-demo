@@ -1,0 +1,33 @@
+<resources>
+    <string name="app_name">IDVoice Example</string>
+    <string name="biometrics_made_simple">Biometrics made simple</string>
+    <string name="enroll">Enroll</string>
+    <string name="verify">Verify</string>
+    <string name="verification">Verification</string>
+    <string name="liveness">Liveness</string>
+    <string name="back">Back</string>
+    <string name="record">Record</string>
+    <string name="need_permissions">Application needs permissions for the correct performance</string>
+    <string name="recording">Recording&#8230;</string>
+    <string name="stop">Stop</string>
+    <string name="statistics">Statistics</string>
+    <string name="verification_successfull">Verification: successful\nVerification result: %.2f%%</string>
+    <string name="verification_failed">Verification: failed\nVerification result: %.2f%%</string>
+    <string name="liveness_successfull">Liveness: successful\nLiveness result: %.2f%%</string>
+    <string name="liveness_failed">Liveness: failed\nLiveness result: %.2f%%</string>
+    <string name="enrollment_done">Enrollment was successfully completed!</string>
+    <string name="recording_done">Recording #%d was successfully completed!</string>
+    <string name="speech_amount">Speech amount, sec</string>
+    <string name="message_for_td_enroll">Please say\nMy voice is my password</string>
+    <string name="message_for_ti_enroll">Please talk\nEnrollment requires 10 seconds of speech</string>
+    <string name="message_for_ti_verify">Please talk\n</string>
+    <string name="message_for_continuous_verify">Please talk\n</string>
+    <string name="message_speech_record_is_too_noisy">The speech record is too noisy</string>
+    <string name="message_speech_record_long_reverberation">The speech record with too long reverberation</string>
+    <string name="message_speech_not_enough">The speech length is not enough</string>
+    <string name="continuous_verify">Continuous verify</string>
+    <string name="text_independent">Text Independent</string>
+    <string name="send_logs">Send logs</string>
+    <string name="settings">Settings</string>
+
+</resources>
