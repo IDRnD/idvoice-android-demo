@@ -1,0 +1,28 @@
+<resources>
+    <string name="app_name">IDVoice Example</string>
+    <string name="biometrics_made_simple">Biometrics made simple</string>
+    <string name="enroll">Enroll</string>
+    <string name="verify">Verify</string>
+    <string name="back">Back</string>
+    <string name="record">Record</string>
+    <string name="verification">Verification</string>
+    <string name="need_permissions">Application needs permissions for the correct performance</string>
+    <string name="ok">OK</string>
+    <string name="permission_record_audio_rationale">record audio</string>
+    <string name="recording">Recording&#8230;</string>
+    <string name="stop">Stop</string>
+    <string name="antispoofing">Anti-spoofing</string>
+    <string name="statistics">Statistics</string>
+    <string name="enroll_first">Please enroll first</string>
+    <string name="verification_successfull">Verification: successful\nVerification result: %f%%</string>
+    <string name="verification_failed">Verification: failed\nVerification result: %f%%</string>
+    <string name="antispoofing_successfull">Anti-spoofing: successful\nAntispoofing result: %f%%</string>
+    <string name="antispoofing_failed">Anti-spoofing: failed\nAntispoofing result: %f%%</string>
+    <string name="enrollment_done">Enrollment was successfully completed!</string>
+    <string name="recording_done">Recording #%d was successfully completed!</string>
+    <string name="speech_amount">Speech amount</string>
+    <string name="message_for_td_enroll">Please say\nLos Angeles Lakers</string>
+    <string name="message_for_ti_enroll">Please talk\n Enrollment requires 10 seconds of net speech</string>
+    <string name="message_for_ti_verify">Please talk\n</string>
+    <string name="message_for_continuous_verify">Please talk\n</string>
+</resources>
