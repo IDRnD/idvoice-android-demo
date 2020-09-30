@@ -10,8 +10,9 @@ import androidx.core.content.ContextCompat;
 
 import com.idrnd.idvoice.R;
 import com.idrnd.idvoice.recorders.ContinuousVerifyRecorder;
-import com.idrnd.idvoice.ui.dialogs.interfaces.NextVerifyResultListener;
+import com.idrnd.idvoice.ui.dialogs.interfaces.OnNextVerifyResultListener;
 import com.idrnd.idvoice.utils.IntermediateColorCalculator;
+import com.idrnd.idvoice.utils.Prefs;
 
 import java.util.Locale;
 
@@ -20,7 +21,7 @@ import static com.idrnd.idvoice.IDVoiceApplication.RECORDING_SAMPLE_RATE;
 /**
  * Dialog for continuous voice verification using ContinuousVerifyRecorder
  */
-public class ContinuousVerifyDialog extends AlertDialog implements NextVerifyResultListener {
+public class ContinuousVerifyDialog extends AlertDialog implements OnNextVerifyResultListener {
 
     private ContinuousVerifyRecorder recorder;
     private TextView textViewVerifyPercent;
@@ -30,8 +31,8 @@ public class ContinuousVerifyDialog extends AlertDialog implements NextVerifyRes
         super(context, R.style.CustomThemeOverlayAlertDialog);
 
         View rootView = ((LayoutInflater)
-            (context.getSystemService(Context.LAYOUT_INFLATER_SERVICE)))
-            .inflate(R.layout.dialog_continous_verify, null, false);
+                (context.getSystemService(Context.LAYOUT_INFLATER_SERVICE)))
+                .inflate(R.layout.dialog_continous_verify, null, false);
 
         ((TextView) rootView.findViewById(R.id.messageForUser)).setText(context.getString(R.string.message_for_continuous_verify));
         rootView.findViewById(R.id.stopBtn).setOnClickListener(view -> dismiss());
@@ -40,9 +41,9 @@ public class ContinuousVerifyDialog extends AlertDialog implements NextVerifyRes
         recorder = new ContinuousVerifyRecorder(RECORDING_SAMPLE_RATE, this);
 
         intermediateColorCalculator = new IntermediateColorCalculator(
-            0.5f,
-            ContextCompat.getColor(context, R.color.red),
-            ContextCompat.getColor(context, R.color.green)
+                Prefs.getInstance().getVerificationThreshold(),
+                ContextCompat.getColor(context, R.color.red),
+                ContextCompat.getColor(context, R.color.green)
         );
 
         setView(rootView);

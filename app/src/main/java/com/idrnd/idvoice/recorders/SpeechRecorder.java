@@ -1,7 +1,7 @@
 package com.idrnd.idvoice.recorders;
 
-import com.idrnd.idvoice.ui.dialogs.interfaces.SpeechLengthUpdateListener;
-import com.idrnd.idvoice.utils.EngineManager;
+import com.idrnd.idvoice.ui.dialogs.interfaces.OnSpeechLengthUpdateListener;
+import com.idrnd.idvoice.utils.verification.EngineManager;
 
 import net.idrnd.voicesdk.media.SpeechSummaryStream;
 
@@ -10,37 +10,44 @@ import net.idrnd.voicesdk.media.SpeechSummaryStream;
  */
 public class SpeechRecorder extends AudioRecorder {
 
-    private SpeechLengthUpdateListener speechLengthUpdateListener;
+    private static final float MIN_SPEECH_LENGTH_IN_MS = 10000f;
+    private static final float MAX_SILENCE_LENGTH_IN_MS = 300f;
 
-    private float minSpeechLengthInSeconds;
-    private float maxSilenceLengthInSeconds;
+    private OnSpeechLengthUpdateListener onSpeechLengthUpdateListener;
+    private float minSpeechLengthInMs;
+    private float maxSilenceLengthInMs;
 
     private SpeechSummaryStream speechSummaryStream;
 
     /**
      * Class for recording and processing audio using SpeechSummaryStream
-     * @param minSpeechLengthInSeconds amount of net speech length that is required
-     * @param maxSilenceLengthInSeconds max silence length used to detect the end of speech
+     * @param minSpeechLengthInMs amount of net speech length that is required
+     * @param maxSilenceLengthInMs max silence length used to detect the end of speech
      */
-    public SpeechRecorder(float minSpeechLengthInSeconds, float maxSilenceLengthInSeconds, int recordingSampleRate, SpeechLengthUpdateListener speechLengthUpdateListener) {
+    public SpeechRecorder(
+            float minSpeechLengthInMs,
+            float maxSilenceLengthInMs,
+            int recordingSampleRate,
+            OnSpeechLengthUpdateListener onSpeechLengthUpdateListener
+    ) {
         super(recordingSampleRate);
-        this.minSpeechLengthInSeconds = minSpeechLengthInSeconds;
-        this.maxSilenceLengthInSeconds = maxSilenceLengthInSeconds;
-        this.speechLengthUpdateListener = speechLengthUpdateListener;
+        this.minSpeechLengthInMs = minSpeechLengthInMs;
+        this.maxSilenceLengthInMs = maxSilenceLengthInMs;
+        this.onSpeechLengthUpdateListener = onSpeechLengthUpdateListener;
 
         speechSummaryStream = EngineManager.getInstance().getSpeechSummaryEngine().createStream(recordingSampleRate);
     }
 
-    public SpeechRecorder(float minSpeechLengthInSeconds, float maxSilenceLengthInSeconds, int recordingSampleRate) {
-        this(minSpeechLengthInSeconds, maxSilenceLengthInSeconds, recordingSampleRate, null);
+    public SpeechRecorder(float minSpeechLengthInMs, float maxSilenceLengthInMs, int recordingSampleRate) {
+        this(minSpeechLengthInMs, maxSilenceLengthInMs, recordingSampleRate, null);
     }
 
     public SpeechRecorder(int recordingSampleRate) {
-        this(10f, 0.3f, recordingSampleRate, null);
+        this(MIN_SPEECH_LENGTH_IN_MS, MAX_SILENCE_LENGTH_IN_MS, recordingSampleRate, null);
     }
 
-    public void setOnSpeechLengthUpdateListener(SpeechLengthUpdateListener speechLengthUpdateListener) {
-        this.speechLengthUpdateListener = speechLengthUpdateListener;
+    public void setOnSpeechLengthUpdateListener(OnSpeechLengthUpdateListener onSpeechLengthUpdateListener) {
+        this.onSpeechLengthUpdateListener = onSpeechLengthUpdateListener;
     }
 
     @Override
@@ -58,16 +65,16 @@ public class SpeechRecorder extends AudioRecorder {
         speechSummaryStream.addSamples(audioChunk);
 
         // Retrieve speech summary
-        float speechLength = speechSummaryStream.getSpeechLength();
+        float speechLengthInMs = speechSummaryStream.getTotalSpeechInfo().getSpeechLengthMs();
         float currentBackgroundLength = speechSummaryStream.getCurrentBackgroundLength();
 
         // Invoke speech length update listener (it updates UI)
-        if (speechLengthUpdateListener != null) {
-            speechLengthUpdateListener.onSpeechLengthUpdate(speechLength);
+        if (onSpeechLengthUpdateListener != null) {
+            onSpeechLengthUpdateListener.onSpeechLengthUpdate(speechLengthInMs);
         }
 
         // Check if user stopped talking
-        if (speechLength > minSpeechLengthInSeconds && currentBackgroundLength > maxSilenceLengthInSeconds) {
+        if ((speechLengthInMs > minSpeechLengthInMs) && (currentBackgroundLength > maxSilenceLengthInMs)) {
             stopRecording();
         }
     }

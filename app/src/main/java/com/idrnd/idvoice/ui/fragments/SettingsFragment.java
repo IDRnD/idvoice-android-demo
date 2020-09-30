@@ -18,9 +18,9 @@ import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 
 import com.idrnd.idvoice.R;
-import com.idrnd.idvoice.utils.EngineManager;
 import com.idrnd.idvoice.utils.Prefs;
 import com.idrnd.idvoice.utils.logs.FileUtils;
+import com.idrnd.idvoice.utils.verification.EngineManager;
 
 import java.util.Locale;
 
@@ -54,17 +54,15 @@ public class SettingsFragment extends Fragment {
         );
 
         Switch switchLiveness = view.findViewById(R.id.switchLiveness);
-        switchLiveness.setChecked(Prefs.getInstance().getCheckLivenessEnable());
+        switchLiveness.setChecked(Prefs.getInstance().getLivenessCheckEnabled());
         switchLiveness.setOnCheckedChangeListener(
             (buttonView, isChecked) -> {
-                Log.d(TAG, "CheckLivenessEnable is " + isChecked);
-                Prefs.getInstance().setCheckLivenessEnable(isChecked);
+                Log.d(TAG, "Liveness check enabled: " + isChecked);
+                Prefs.getInstance().setLivenessCheckEnabled(isChecked);
 
                 // If no anti-spoofing checks are planned, clean up the resources associated with it
                 // to decrease RAM consumption
-                if (!isChecked) {
-                    EngineManager.getInstance().releaseAntispoofEngine();
-                }
+                if (!isChecked) EngineManager.getInstance().releaseAntispoofEngine();
             }
         );
 
@@ -105,13 +103,9 @@ public class SettingsFragment extends Fragment {
         });
     }
 
-    public void showLoading() {
-        progressLayout.setVisibility(View.VISIBLE);
-    }
+    public void showLoading() { progressLayout.setVisibility(View.VISIBLE); }
 
-    public void hideLoading() {
-        progressLayout.setVisibility(View.GONE);
-    }
+    public void hideLoading() { progressLayout.setVisibility(View.GONE); }
 }
 
 

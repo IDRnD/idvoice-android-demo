@@ -1,4 +1,4 @@
-package com.idrnd.idvoice.utils.runners;
+package com.idrnd.idvoice.utils.verification;
 
 import android.os.Handler;
 import android.os.Looper;
@@ -6,13 +6,11 @@ import android.util.Log;
 import android.util.Pair;
 
 import com.idrnd.idvoice.models.AudioRecord;
-import com.idrnd.idvoice.utils.EngineManager;
 import com.idrnd.idvoice.utils.Prefs;
 
 import net.idrnd.voicesdk.antispoof2.AntispoofResult;
+import net.idrnd.voicesdk.core.common.VoiceTemplate;
 import net.idrnd.voicesdk.verify.VerifyResult;
-import net.idrnd.voicesdk.verify.VoiceTemplate;
-import net.idrnd.voicesdk.verify.VoiceVerifyEngine;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -25,18 +23,21 @@ import java.util.concurrent.Future;
 public class VerificationRunner {
 
     private static String TAG = VerificationRunner.class.getSimpleName();
+    private static final int NUM_THREADS_FOR_VERIFICATION = 2;
+    private static final int NUM_THREADS_FOR_VERIFICATION_AND_LIVENESS = NUM_THREADS_FOR_VERIFICATION + 1;
+
     private final ExecutorService executor;
     private final Handler handler = new Handler(Looper.getMainLooper());
-    private boolean checkLiveness;
+    private boolean livenessCheckEnabled;
 
     /**
      * Constructor
-     * @param checkLiveness param determines if liveness check is needed
+     * @param livenessCheckEnabled param determines if liveness check is enabled
      */
-    public VerificationRunner(boolean checkLiveness) {
-        this.checkLiveness = checkLiveness;
+    public VerificationRunner(boolean livenessCheckEnabled) {
+        this.livenessCheckEnabled = livenessCheckEnabled;
 
-        final int numThreads = checkLiveness ? 3 : 2;
+        final int numThreads = livenessCheckEnabled ? NUM_THREADS_FOR_VERIFICATION_AND_LIVENESS : NUM_THREADS_FOR_VERIFICATION;
 
         if (Runtime.getRuntime().availableProcessors() >= numThreads) {
             executor = Executors.newFixedThreadPool(numThreads);
@@ -72,7 +73,8 @@ public class VerificationRunner {
                         // computationally expensive operation and can take considerable time.
                         VoiceTemplate verifyTemplate = verifyEngine.createVoiceTemplate(
                                 recordObject.samples,
-                                recordObject.sampleRate);
+                                recordObject.sampleRate
+                        );
 
                         // Retrieve enrollment voice template from shared preferences
                         VoiceTemplate enrollTemplate = VoiceTemplate.deserialize(
@@ -80,13 +82,13 @@ public class VerificationRunner {
                         );
 
                         Log.d(TAG, "Verify start in " + Thread.currentThread().getName());
-                        return verifyEngine.verify(enrollTemplate, verifyTemplate);
+                        return verifyEngine.matchVoiceTemplates(enrollTemplate, verifyTemplate);
                     }
                 );
 
                 final Pair<VerifyResult, AntispoofResult> result;
 
-                if (checkLiveness) {
+                if (livenessCheckEnabled) {
                     // Check spoofing in a separate thread
                     Future<AntispoofResult> antispoofingResult = executor.submit(() -> {
                             Log.d(TAG, "Antispoof start in " + Thread.currentThread().getName());

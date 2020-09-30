@@ -1,36 +1,41 @@
 package com.idrnd.idvoice.recorders;
 
 import android.media.AudioFormat;
-import android.media.MediaRecorder;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import com.idrnd.idvoice.models.AudioRecord;
-import com.idrnd.idvoice.ui.dialogs.interfaces.StopRecordingListener;
+import com.idrnd.idvoice.ui.dialogs.interfaces.OnStopRecordingListener;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+
+import static android.media.MediaRecorder.AudioSource.VOICE_RECOGNITION;
 
 /**
  * Class for audio recording. Recording is performed in a separate thread.
  * stopRecording() method should be called in order to stop recording and retrieve audio record
  */
 public class AudioRecorder {
+
     private enum Status {
         IDLE,
         WORKING
     }
 
+    private static final String TAG = AudioRecorder.class.getSimpleName();
     private static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_IN_MONO;
     private static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
 
-    protected StopRecordingListener stopRecordingListener;
+    protected OnStopRecordingListener onStopRecordingListener;
     protected android.media.AudioRecord recorder;
-    protected int bufferSize;
+    protected int minBufferSize;
     private Handler handler = new Handler(Looper.getMainLooper());
     private int recorderSampleRate;
     private Thread recordingThread;
-    private List<byte[]> audioData;
+    private ByteArrayOutputStream audioDataOutputStream;
     private byte[] buffer;
     private Status status = Status.IDLE;
 
@@ -38,31 +43,39 @@ public class AudioRecorder {
         this.recorderSampleRate = recorderSampleRate;
 
         // 1) Set buffer size
-        bufferSize = android.media.AudioRecord.getMinBufferSize(recorderSampleRate, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING) * 3;
+        minBufferSize = android.media.AudioRecord.getMinBufferSize(
+                recorderSampleRate,
+                RECORDER_CHANNELS,
+                RECORDER_AUDIO_ENCODING
+        ) * 3;
 
         // 2) Check if desired buffer size is too big for hardware and decrease it if necessary
-        if (bufferSize < 0) {
-            bufferSize = 4000;
+        if (minBufferSize < 0) {
+            minBufferSize = 4000;
         }
 
         // 3) Allocate memory for buffer
-        buffer = new byte[bufferSize];
+        buffer = new byte[minBufferSize];
 
         // 4) Init Android audio recorder
         recorder = new android.media.AudioRecord(
-            MediaRecorder.AudioSource.VOICE_RECOGNITION,
-            recorderSampleRate, RECORDER_CHANNELS,
-            RECORDER_AUDIO_ENCODING, bufferSize
+                VOICE_RECOGNITION,
+                recorderSampleRate,
+                RECORDER_CHANNELS,
+                RECORDER_AUDIO_ENCODING,
+                minBufferSize
         );
 
-        audioData = new ArrayList<>();
+        audioDataOutputStream = new ByteArrayOutputStream(minBufferSize);
     }
 
-    public void setStopRecordingListener(StopRecordingListener stopRecordingListener) {
-        this.stopRecordingListener = stopRecordingListener;
+    public void setOnStopRecordingListener(OnStopRecordingListener onStopRecordingListener) {
+        this.onStopRecordingListener = onStopRecordingListener;
     }
 
-    protected void onStartRecording() {}
+    protected void onStartRecording() {
+        // Nothing
+    }
 
     public void startRecording() {
         if (status == Status.IDLE) {
@@ -71,67 +84,74 @@ public class AudioRecorder {
             status = Status.WORKING;
 
             // Run buffer callback in background thread
-            recordingThread = new Thread(this::bufferCallback, "AudioRecorder Thread");
+            recordingThread = new Thread(
+                    this::bufferCallback,
+                    AudioRecorder.class.getSimpleName() + " Thread"
+            );
+
             recordingThread.start();
         }
         onStartRecording();
     }
 
-    protected void onNextAudioChunk(byte[] audioChunk) {}
+    protected void onNextAudioChunk(byte[] audioChunk) {
+        // Nothing
+    }
+
+    protected void onBufferCallbackException(IOException exception) {
+        // Nothing
+    }
 
     private void bufferCallback() {
-        int read;
-
         while (status == Status.WORKING) {
             // 1) Read audio buffer from recorder
-            read = recorder.read(buffer, 0, bufferSize);
+            int numReadBytes = recorder.read(buffer, 0, minBufferSize);
 
-            if (read != android.media.AudioRecord.ERROR_INVALID_OPERATION) {
+            if (numReadBytes > 0) {
+
+                ByteBuffer recordedBytes = ByteBuffer.allocate(numReadBytes);
+                recordedBytes.put(buffer, 0, numReadBytes);
+
                 // 2) Collect audio samples
-                audioData.add(buffer.clone());
-                onNextAudioChunk(buffer.clone());
+                try {
+                    audioDataOutputStream.write(recordedBytes.array());
+                    onNextAudioChunk(recordedBytes.array());
+                } catch (IOException e) {
+                    onBufferCallbackException(e);
+                }
             }
         }
     }
 
-    synchronized public AudioRecord stopRecording() {
+    synchronized public AudioRecord stopRecording() throws IllegalStateException {
         if (status == Status.WORKING) {
 
             status = Status.IDLE;
 
             try {
                 recorder.stop();
-            } catch (RuntimeException ex) {
-                ex.printStackTrace();
+            } catch (IllegalStateException ex) {
+                Log.e(TAG, "Error while audio recording", ex);
+                throw ex;
             }
 
             recordingThread = null;
 
-            // Convert ArrayList of audio buffers to raw array
-            byte[] audioDataArray = new byte[audioData.size() * bufferSize];
+            AudioRecord audioRecord = new AudioRecord(
+                    audioDataOutputStream.toByteArray(),
+                    recorderSampleRate
+            );
 
-            for (int i = 0; i < audioData.size(); i++) {
-                System.arraycopy(
-                    audioData.get(i),
-                    0,
-                    audioDataArray,
-                    i * bufferSize,
-                    bufferSize
-                );
+            audioDataOutputStream.reset();
+
+            if (onStopRecordingListener != null) {
+                handler.post(() -> onStopRecordingListener.onStopRecording(audioRecord));
             }
-
-            AudioRecord audioRecord = new AudioRecord(audioDataArray, recorderSampleRate);
-
-            if (stopRecordingListener != null) {
-                handler.post(() -> stopRecordingListener.onStopRecording(audioRecord));
-            }
-
             return audioRecord;
         } else {
-            if (stopRecordingListener != null) {
-                handler.post(() -> stopRecordingListener.onStopRecording(null));
+            if (onStopRecordingListener != null) {
+                handler.post(() -> onStopRecordingListener.onStopRecording(null));
             }
-
             return null;
         }
     }

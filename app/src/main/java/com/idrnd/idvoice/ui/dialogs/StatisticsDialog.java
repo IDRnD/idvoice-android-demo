@@ -17,6 +17,9 @@ import com.idrnd.idvoice.utils.Prefs;
 
 import java.util.Objects;
 
+import static com.idrnd.idvoice.ui.fragments.StartFragment.ANTISPOOFING_SCORE;
+import static com.idrnd.idvoice.ui.fragments.StartFragment.VERIFICATION_SCORE;
+
 /**
  * Statistic dialog for showing statistic for verify and liveness check
  */
@@ -25,8 +28,9 @@ public class StatisticsDialog extends DialogFragment {
     private TextView verificationStatistics;
     private TextView antispoofingStatistics;
 
-    public static String VERIFICATION_SCORE = "VERIFICATION_SCORE";
-    public static String ANTISPOOFING_SCORE = "ANTISPOOFING_SCORE";
+    // Liveness check threshold does not have that much variety as verification one,
+    // so we just hard-code it
+    private static final int ANTISPOOFING_THRESHOLD = 50;
 
     public static StatisticsDialog newInstance(Bundle bundle) {
         StatisticsDialog statisticsDialog = new StatisticsDialog();
@@ -57,14 +61,9 @@ public class StatisticsDialog extends DialogFragment {
 
         if (arguments.containsKey(ANTISPOOFING_SCORE)) {
             float antispoofingScore = arguments.getFloat(ANTISPOOFING_SCORE) * 100;
-
-            // Liveness check threshold does not have that much variety as verification one,
-            // so we just hard-code it
-            final int antispoofingThreshold = 50;
-            updateLivenessStatisticViews(antispoofingScore, antispoofingThreshold);
-        } else {
+            updateLivenessStatisticViews(antispoofingScore, ANTISPOOFING_THRESHOLD);
+        } else
             antispoofingStatistics.setText("");
-        }
     }
 
     @Override

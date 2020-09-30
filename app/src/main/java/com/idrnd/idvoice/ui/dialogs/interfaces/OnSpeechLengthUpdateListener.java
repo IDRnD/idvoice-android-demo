@@ -1,5 +1,5 @@
 package com.idrnd.idvoice.ui.dialogs.interfaces;
 
-public interface SpeechLengthUpdateListener {
+public interface OnSpeechLengthUpdateListener {
     void onSpeechLengthUpdate(float speechLength);
 }

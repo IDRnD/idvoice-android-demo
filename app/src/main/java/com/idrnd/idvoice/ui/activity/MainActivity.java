@@ -10,9 +10,9 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.idrnd.idvoice.R;
 import com.idrnd.idvoice.ui.fragments.StartFragment;
-import com.idrnd.idvoice.utils.EngineManager;
 import com.idrnd.idvoice.utils.Prefs;
 import com.idrnd.idvoice.utils.logs.FileUtils;
+import com.idrnd.idvoice.utils.verification.EngineManager;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -27,17 +27,13 @@ public class MainActivity extends AppCompatActivity {
         getWindow().setStatusBarColor(getResources().getColor(R.color.whiteBackground));
         setContentView(R.layout.activity_main);
 
-        initSingletons();
+        EngineManager.getInstance().init(getApplicationContext());
+        Prefs.getInstance().init(getPreferences(MODE_PRIVATE));
+        FileUtils.getInstance().init(getApplicationContext());
 
         getSupportFragmentManager().beginTransaction()
                 .add(R.id.fragmentContainer, new StartFragment())
                 .commit();
-    }
-
-    private void initSingletons() {
-        EngineManager.getInstance().init(getApplicationContext());
-        Prefs.getInstance().init(getPreferences(MODE_PRIVATE));
-        FileUtils.getInstance().init(getApplicationContext());
     }
 
     /**

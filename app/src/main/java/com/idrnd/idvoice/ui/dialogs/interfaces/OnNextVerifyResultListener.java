@@ -1,5 +1,5 @@
 package com.idrnd.idvoice.ui.dialogs.interfaces;
 
-public interface NextVerifyResultListener {
+public interface OnNextVerifyResultListener {
     void onNextVerifyResult(float probability);
 }

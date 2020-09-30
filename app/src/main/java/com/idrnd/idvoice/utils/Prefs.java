@@ -18,7 +18,7 @@ public class Prefs {
     }
 
     private static final String VERIFICATION_THRESHOLD = "VERIFICATION_THRESHOLD";
-    private static final String CHECK_LIVENESS_ENABLE  = "CHECK_LIVENESS_ENABLE";
+    private static final String LIVENESS_CHECK_ENABLED = "LIVENESS_CHECK_ENABLED";
     private static final String VOICE_TEMPLATE_TD      = "VOICE_TEMPLATE_TD";
     private static final String VOICE_TEMPLATE_TI      = "VOICE_TEMPLATE_TI";
 
@@ -31,23 +31,18 @@ public class Prefs {
 
     private static Prefs instance;
 
-    private Prefs() {}
+    private Prefs() { }
 
     public static Prefs getInstance() {
         if (instance == null) {
             instance = new Prefs();
         }
-
         return instance;
     }
 
-    public void init(SharedPreferences preferenceManager) {
-        this.preferenceManager = preferenceManager;
-    }
+    public void init(SharedPreferences preferenceManager) { this.preferenceManager = preferenceManager; }
 
-    public Prefs(SharedPreferences manager) {
-        preferenceManager = manager;
-    }
+    public Prefs(SharedPreferences manager) { preferenceManager = manager; }
 
     /**
      * Gets voice template from SharedPreferences by voice template type
@@ -55,7 +50,6 @@ public class Prefs {
      * @return serialized voice template
      */
     public byte[] getVoiceTemplate(VoiceTemplateType voiceTemplateType) {
-
         String encodedBytes = preferenceManager.getString(mapEnumPrefsKey.get(voiceTemplateType), null);
 
         if (encodedBytes != null) {
@@ -92,14 +86,14 @@ public class Prefs {
             .apply();
     }
 
-    public boolean getCheckLivenessEnable() {
-        return preferenceManager.getBoolean(CHECK_LIVENESS_ENABLE, true);
+    public boolean getLivenessCheckEnabled() {
+        return preferenceManager.getBoolean(LIVENESS_CHECK_ENABLED, true);
     }
 
-    public void setCheckLivenessEnable(boolean checkLivenessEnable) {
+    public void setLivenessCheckEnabled(boolean checkLivenessEnable) {
         preferenceManager
             .edit()
-            .putBoolean(CHECK_LIVENESS_ENABLE, checkLivenessEnable)
+            .putBoolean(LIVENESS_CHECK_ENABLED, checkLivenessEnable)
             .apply();
     }
 }

@@ -1,15 +1,14 @@
-package com.idrnd.idvoice.utils;
+package com.idrnd.idvoice.utils.verification;
 
 import android.content.Context;
+
+import com.idrnd.idvoice.utils.Prefs;
 
 import net.idrnd.android.media.AssetsExtractor;
 import net.idrnd.voicesdk.antispoof2.AntispoofEngine;
 import net.idrnd.voicesdk.media.SpeechSummaryEngine;
-import net.idrnd.voicesdk.verify.VerifyMethod;
-import net.idrnd.voicesdk.verify.VoiceVerifyEngine;
 
 import java.io.File;
-import java.util.EnumSet;
 
 /**
  * Singleton voice engines manager
@@ -17,8 +16,9 @@ import java.util.EnumSet;
 public class EngineManager {
 
     private File assetsDir;
-    private VoiceVerifyEngine textDependentVoiceVerifyEngine = null;
-    private VoiceVerifyEngine textIndependentVoiceVerifyEngine = null;
+
+    private VoiceVerifyEngine textDependentVerifyEngine = null;
+    private VoiceVerifyEngine textIndependentVerifyEngine = null;
     private SpeechSummaryEngine speechSummaryEngine = null;
     private AntispoofEngine antispoofEngine = null;
 
@@ -30,7 +30,6 @@ public class EngineManager {
         if (instance == null) {
             instance = new EngineManager();
         }
-
         return instance;
     }
 
@@ -51,7 +50,9 @@ public class EngineManager {
      */
     public synchronized SpeechSummaryEngine getSpeechSummaryEngine() {
         if (speechSummaryEngine == null) {
-            speechSummaryEngine = new SpeechSummaryEngine(new File(assetsDir, AssetsExtractor.SPEECH_SUMMARY_INIT_DATA_SUBPATH).getPath());
+            speechSummaryEngine = new SpeechSummaryEngine(
+                    new File(assetsDir, AssetsExtractor.SPEECH_SUMMARY_INIT_DATA_SUBPATH).getPath()
+            );
         }
         return speechSummaryEngine;
     }
@@ -69,21 +70,15 @@ public class EngineManager {
          */
         switch (voiceTemplateType) {
             case TextIndependent:
-                if (textIndependentVoiceVerifyEngine == null) {
-                    textIndependentVoiceVerifyEngine = new VoiceVerifyEngine(
-                        new File(assetsDir, AssetsExtractor.VERIFY_INIT_DATA_16K_SUBPATH).getPath(),
-                        EnumSet.of(VerifyMethod.TI_X_2)
-                    );
+                if (textIndependentVerifyEngine == null) {
+                    textIndependentVerifyEngine = new TextIndependentVerifyEngine(assetsDir);
                 }
-                return textIndependentVoiceVerifyEngine;
+                return textIndependentVerifyEngine;
             case TextDependent:
-                if (textDependentVoiceVerifyEngine == null) {
-                    textDependentVoiceVerifyEngine = new VoiceVerifyEngine(
-                        new File(assetsDir, AssetsExtractor.VERIFY_INIT_DATA_16K_SUBPATH).getPath(),
-                        EnumSet.of(VerifyMethod.MAP, VerifyMethod.TI_X_2)
-                    );
+                if (textDependentVerifyEngine == null) {
+                    textDependentVerifyEngine = new TextDependentVerifyEngine(assetsDir);
                 }
-                return textDependentVoiceVerifyEngine;
+                return textDependentVerifyEngine;
         }
         return null;
     }

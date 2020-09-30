@@ -22,7 +22,7 @@
     <string name="recording_done">Recording #%d was successfully completed!</string>
     <string name="speech_amount">Speech amount</string>
     <string name="message_for_td_enroll">Please say\nLos Angeles Lakers</string>
-    <string name="message_for_ti_enroll">Please talk\n Enrollment requires 10 seconds of net speech</string>
+    <string name="message_for_ti_enroll">Please talk\n Enrollment requires 10 seconds of speech</string>
     <string name="message_for_ti_verify">Please talk\n</string>
     <string name="message_for_continuous_verify">Please talk\n</string>
 </resources>

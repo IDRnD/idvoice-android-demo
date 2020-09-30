@@ -30,8 +30,8 @@ public class SpeechRecordDialog extends AbstractSpeechRecordDialog {
         super.onStart();
         final TextView speechLengthView = findViewById(R.id.speechLength);
 
-        ((SpeechRecorder) recorder).setOnSpeechLengthUpdateListener(speechLength ->
-            handler.post(() -> speechLengthView.setText(speechLength + "s"))
+        ((SpeechRecorder) recorder).setOnSpeechLengthUpdateListener(speechLengthInMs ->
+            handler.post(() -> speechLengthView.setText(speechLengthInMs / 1000f + "s"))
         );
     }
 }

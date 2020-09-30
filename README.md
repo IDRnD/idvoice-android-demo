@@ -1,7 +1,7 @@
 Android IDVoice sample application overview
 ===========================================
 
-**The application code is compatible with VoiceSDK 2.13 and 2.14.**
+**The application code used VoiceSDK 3.0 and it's not compatible with VoiceSDK 2.13 and 2.14.**
 
 This sample application is intended to demonstrate the VoiceSDK voice verification 
 and anti-spoofing capabilities:
@@ -22,9 +22,6 @@ Tips for voice verification process
 -----------------------------------
 
 - **Do enrolls in quiet conditions. Speak clearly and without changing the intonation of your usual voice.**
-- For small init data size, but large voice template size use MAP method (**text-dependent**)
-- For improved voice verification precision use MAP and TI_X_2 methods together (**text-dependent**)
-- For large init data size, but small voice template size use TI_X_2 method (**text-independent**)
 
 Please refer to [IDVoice quick start guide](https://docs.idrnd.net/voice/#idvoice-speaker-verification), [IDLive quick start guide](https://docs.idrnd.net/voice/#idlive-voice-anti-spoofing) and [signal validation guide](https://docs.idrnd.net/voice/#signal-validation-utilities) in order to get more detailed information and best practicies for the listed capabilities.
 
@@ -32,6 +29,6 @@ Developer tips
 --------------
 
 - This repository does not contain VoiceSDK distribution itself. Please copy the `java/voicesdk-aar-full-release.aar` file from the IDVoice + IDLive Android package received from ID R&D to the `voicesdk/` folder in order to be able to build and run the application.
-- If you prefer not to use one of the voice verification methods, you can simply remove the corresponding folder from the AAR's `voicesdk/voicesdk.aar/assets/init_data/verify_init_data_16k/` folder (MAP - `map_method/`, TI_X_2 - `ti_xvect2/`)
+- If you prefer not to use one of the voice verification methods, you can simply remove the corresponding folder from the AAR's `voicesdk/voicesdk.aar/assets/verify_init_data/` folder (text-independent - `TI-mic`, text-dependent - `TD-mic`)
 - For *x86* and *x86_64* emulator builds poor performance is expected, even with KVM enabled. Also, as QEMU emulation is imperfect, you can see occasional crashes. Please use newer images to mitigate both of these problems.
 - It is strongly advised to enable [ABI splits](https://developer.android.com/studio/build/configure-apk-splits) so that only relevant of AAR native libraries is present in each apk, greatly reducing their size.

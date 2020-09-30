@@ -30,13 +30,13 @@ import static com.idrnd.idvoice.IDVoiceApplication.singleTaskRunner;
  */
 public class FileUtils {
 
-    private static String NAME_CSV_LOGS = "logs.csv";
-    private static String NAME_ZIP_LOGS = "logs.zip";
+    private final static String NAME_CSV_LOGS = "logs.csv";
+    private final static String NAME_ZIP_LOGS = "logs.zip";
     private String TAG = FileUtils.class.getSimpleName();
     private File baseDir;
     private static FileUtils instance;
 
-    private FileUtils() {}
+    private FileUtils() { }
 
     public static FileUtils getInstance() {
         if (instance == null) {
@@ -229,9 +229,8 @@ public class FileUtils {
             logs.createNewFile();
             writer = new CSVWriter(new FileWriter(logs, true));
             writer.writeNext(StatisticLog.getHeaderCsv());
-        } else {
+        } else
             writer = new CSVWriter(new FileWriter(logs, true));
-        }
 
         String[] data = log.getCsvData();
 
@@ -239,11 +238,7 @@ public class FileUtils {
         writer.close();
     }
 
-    private File getFileFromBaseDir(String nameFile) {
-        return new File(baseDir, nameFile);
-    }
+    private File getFileFromBaseDir(String nameFile) { return new File(baseDir, nameFile); }
 
-    private File getZipFileLogs() {
-        return new File(baseDir, NAME_ZIP_LOGS);
-    }
+    private File getZipFileLogs() { return new File(baseDir, NAME_ZIP_LOGS); }
 }

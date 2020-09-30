@@ -5,12 +5,13 @@ import android.os.Looper;
 import android.util.Log;
 
 import com.idrnd.idvoice.models.AudioRecord;
-import com.idrnd.idvoice.ui.dialogs.interfaces.NextVerifyResultListener;
-import com.idrnd.idvoice.utils.EngineManager;
+import com.idrnd.idvoice.ui.dialogs.interfaces.OnNextVerifyResultListener;
 import com.idrnd.idvoice.utils.Prefs;
+import com.idrnd.idvoice.utils.verification.EngineManager;
+import com.idrnd.idvoice.utils.verification.VoiceVerifyEngine;
 
-import net.idrnd.voicesdk.verify.VoiceTemplate;
-import net.idrnd.voicesdk.verify.VoiceVerifyEngine;
+import net.idrnd.voicesdk.common.VoiceSdkEngineException;
+import net.idrnd.voicesdk.core.common.VoiceTemplate;
 import net.idrnd.voicesdk.verify.VoiceVerifyStream;
 
 import static com.idrnd.idvoice.utils.Prefs.VoiceTemplateType.TextIndependent;
@@ -20,33 +21,44 @@ import static com.idrnd.idvoice.utils.Prefs.VoiceTemplateType.TextIndependent;
  */
 public class ContinuousVerifyRecorder extends AudioRecorder {
 
-    private final String TAG = ContinuousVerifyRecorder.class.getSimpleName();
+    private static final String TAG = ContinuousVerifyRecorder.class.getSimpleName();
+
+    // For a detailed explanation of this parameter please refer to https://docs.idrnd.net/voice/#idvoice-speaker-verification
+    // ('Continuous speaker verification' section)
+    private static final int WINDOW_LENGTH_IN_SECONDS = 4;
+
     private VoiceVerifyStream voiceVerifyStream;
     private VoiceVerifyEngine verifyEngine;
-    private NextVerifyResultListener nextVerifyResultListener;
+    private OnNextVerifyResultListener onNextVerifyResultListener;
     private final Handler handler = new Handler(Looper.getMainLooper());
 
     /**
      * Class for audio recording combined with continuous voice verification. It does not employ anti-spoofing check
      * @param recorderSampleRate audio record sampling rate
-     * @param nextVerifyResultListener callback for processing produced verify results
+     * @param onNextVerifyResultListener callback for processing produced verify results
      */
-    public ContinuousVerifyRecorder(int recorderSampleRate, NextVerifyResultListener nextVerifyResultListener) {
+    public ContinuousVerifyRecorder(int recorderSampleRate, OnNextVerifyResultListener onNextVerifyResultListener) {
         super(recorderSampleRate);
-        this.nextVerifyResultListener = nextVerifyResultListener;
+        this.onNextVerifyResultListener = onNextVerifyResultListener;
 
         // Get text independent voice template
-        VoiceTemplate enrollTemplate = VoiceTemplate.deserialize(Prefs.getInstance().getVoiceTemplate(TextIndependent));
-
-        // For a detailed explanation of this parameter please refer to https://docs.idrnd.net/voice/#idvoice-speaker-verification
-        // ('Continuous speaker verification' section)
-        final int windowLengthSeconds = 4;
+        VoiceTemplate enrollTemplate = VoiceTemplate.deserialize(
+                Prefs.getInstance().getVoiceTemplate(TextIndependent)
+        );
 
         // It is important to keep this object alive the whole time VoiceVerifyStream exists
         // For continuous verification, text-independent verification should be used
         verifyEngine = EngineManager.getInstance().getVerifyEngine(TextIndependent);
 
-        voiceVerifyStream = verifyEngine.createVerifyStream(enrollTemplate, recorderSampleRate, windowLengthSeconds);
+        voiceVerifyStream = verifyEngine.getVoiceVerifyStream(
+                enrollTemplate,
+                recorderSampleRate,
+                WINDOW_LENGTH_IN_SECONDS
+        );
+    }
+
+    public void setOnNextVerifyResultListener(OnNextVerifyResultListener onNextVerifyResultListener) {
+        this.onNextVerifyResultListener = onNextVerifyResultListener;
     }
 
     @Override
@@ -56,7 +68,7 @@ public class ContinuousVerifyRecorder extends AudioRecorder {
     }
 
     @Override
-    protected void onNextAudioChunk(byte[] audioChunk) {
+    protected void onNextAudioChunk(byte[] audioChunk) throws VoiceSdkEngineException {
         super.onNextAudioChunk(audioChunk);
         try {
             // Process new byte array with audio chunk
@@ -67,15 +79,12 @@ public class ContinuousVerifyRecorder extends AudioRecorder {
                 // Return verify probability
                 float newProbability = voiceVerifyStream.getVerifyResult().getVerifyResult().getProbability();
 
-                handler.post(() -> nextVerifyResultListener.onNextVerifyResult(newProbability));
+                handler.post(() -> onNextVerifyResultListener.onNextVerifyResult(newProbability));
             }
-        } catch (Exception e) {
-            Log.e(TAG, "Something wrong when process audio chunk using VoiceVerifyStream", e);
+        } catch (VoiceSdkEngineException e) {
+            Log.e(TAG, "Error while audio chunk processing with use VoiceVerifyStream", e);
+            throw e;
         }
-    }
-
-    public void setOnNextVerifyResultListener(NextVerifyResultListener nextVerifyResultListener) {
-        this.nextVerifyResultListener = nextVerifyResultListener;
     }
 }
 

@@ -45,7 +45,6 @@ public class IntermediateColorCalculator {
      */
     public int calculateIntermediateColor(float progress) {
         float ratioColor;
-
         if (progress <= lowThreshold) {
             ratioColor = 0f;
         } else {

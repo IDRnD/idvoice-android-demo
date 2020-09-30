@@ -29,5 +29,4 @@ public class SpeechEndpointRecordDialog extends AbstractSpeechRecordDialog {
         findViewById(R.id.speechLength).setVisibility(View.INVISIBLE);
         findViewById(R.id.speechLengthLabel).setVisibility(View.INVISIBLE);
     }
-
 }

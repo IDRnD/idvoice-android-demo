@@ -36,8 +36,9 @@ public class SingleTaskRunner {
             final R result;
             try {
                 result = callable.call();
-                if(result != null)
+                if(result != null) {
                     handler.post(() -> callback.onComplete(result));
+                }
             } catch (Exception e) {
                 Log.e(TAG, "Unknown problem", e);
             }
