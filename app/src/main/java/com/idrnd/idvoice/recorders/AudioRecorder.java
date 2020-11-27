@@ -1,6 +1,7 @@
 package com.idrnd.idvoice.recorders;
 
 import android.media.AudioFormat;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -12,6 +13,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import static android.media.MediaRecorder.AudioSource.UNPROCESSED;
 import static android.media.MediaRecorder.AudioSource.VOICE_RECOGNITION;
 
 /**
@@ -58,8 +60,14 @@ public class AudioRecorder {
         buffer = new byte[minBufferSize];
 
         // 4) Init Android audio recorder
+        int audioSource;
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            audioSource = UNPROCESSED;
+        } else {
+            audioSource = VOICE_RECOGNITION;
+        }
         recorder = new android.media.AudioRecord(
-                VOICE_RECOGNITION,
+                audioSource,
                 recorderSampleRate,
                 RECORDER_CHANNELS,
                 RECORDER_AUDIO_ENCODING,
