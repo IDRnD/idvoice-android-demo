@@ -9,7 +9,7 @@ import androidx.appcompat.app.AlertDialog;
 
 import com.idrnd.idvoice.R;
 import com.idrnd.idvoice.recorders.AudioRecorder;
-import com.idrnd.idvoice.ui.dialogs.interfaces.StopRecordingListener;
+import com.idrnd.idvoice.ui.dialogs.interfaces.OnStopRecordingListener;
 import com.skyfishjy.library.RippleBackground;
 
 /**
@@ -20,12 +20,12 @@ public abstract class AbstractSpeechRecordDialog extends AlertDialog {
 
     protected AudioRecorder recorder;
     private RippleBackground rippleBackground;
-    private StopRecordingListener stopRecordingListener;
+    private OnStopRecordingListener stopRecordingListener;
 
     /**
      * @param messageForUser message for user that contains useful information about what they need to do
      */
-    public AbstractSpeechRecordDialog(Context context, String messageForUser, StopRecordingListener stopRecordingListener) {
+    public AbstractSpeechRecordDialog(Context context, String messageForUser, OnStopRecordingListener stopRecordingListener) {
         super(context, R.style.CustomThemeOverlayAlertDialog);
         this.stopRecordingListener = stopRecordingListener;
 
@@ -51,14 +51,14 @@ public abstract class AbstractSpeechRecordDialog extends AlertDialog {
         this(context, messageForUser, null);
     }
 
-    public void setStopRecordingListener(StopRecordingListener stopRecordingListener) {
+    public void setOnStopRecordingListener(OnStopRecordingListener stopRecordingListener) {
         this.stopRecordingListener = stopRecordingListener;
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        recorder.setStopRecordingListener(stopRecordingListener);
+        recorder.setOnStopRecordingListener(stopRecordingListener);
         recorder.startRecording();
         rippleBackground.startRippleAnimation();
     }
