@@ -5,7 +5,7 @@
     <item
         android:width="2000dp"
         android:height="2000dp"
-        android:drawable="@color/whiteBackground"/>
+        android:drawable="@color/black_haze"/>
 
     <item
         android:gravity="center"
