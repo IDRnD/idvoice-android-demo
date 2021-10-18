@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item>
+        <shape
+            android:shape="oval">
+            <solid android:color="@android:color/white"/>
+            <size android:width="230dp"/>
+            <size android:height="230dp"/>
+        </shape>
+    </item>
+
+    <item
+        android:width="200dp"
+        android:height="72dp"
+        android:gravity="center"
+        android:drawable="@drawable/ic_icon_logo"/>
+
+</layer-list>
