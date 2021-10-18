@@ -14,11 +14,6 @@ capabilities:
   seconds of their speech to create a strong voiceprint. By enrolling for the second time user
   overwrites their voiceprint.
 
-- It provides text-independent continuous verification scenario without anti-spoofing check.
-
-- It implements simple logging for voice verification results and anti-spoofing checks along with
-  audio records. Collected logs can be sent via email or instant messaging app.
-
 The application also demonstrates the way to validate user audio input by performing speech endpoint
 detection and estimating net speech length.
 
@@ -48,6 +43,13 @@ guide][3] in order to get more detailed information and best practices for the l
 
 - It is strongly advised to enable [ABI splits][4] so that only relevant of AAR native libraries is
   present in each apk, greatly reducing their size.
+
+- You can find:
+  - initialization of VoiceSDK engines in `SharedViewModel.kt`;
+  - using of them in `PhraseEnrollerViewModel.kt`, `EnrollerViewModel.kt` and `VerifierViewModel.kt`.
+  
+- Be careful:
+  - all VoiceSDK classes that inherit from `VoiceSdkNativePeer` (most VoiceSDK classes) must be closed after using.
 
 [1]: https://docs.idrnd.net/voice/#idvoice-speaker-verification
 [2]: https://docs.idrnd.net/voice/#idlive-voice-anti-spoofing

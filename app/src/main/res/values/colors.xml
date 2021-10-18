@@ -1,16 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#54BF97</color>
-    <color name="colorPrimaryDark">#0b8558</color>
-    <color name="colorAccent">@color/green</color>
-
-    <color name="whiteBackground">#f7f8fa</color>
-    <color name="green">#50c99c</color>
-    <color name="disabledGreen">#c5eade</color>
-    <color name="pressedGreen">#0b8558</color>
-    <color name="grey">#95a2ac</color>
-    <color name="darkGrey">#667a87</color>
-    <color name="pressedDarkGrey">#223643</color>
-    <color name="red">#ca4c41</color>
-    <color name="pressedRed">#960900</color>
+    <color name="primary_color">@color/shamrock</color>
+    <color name="black_haze">#f7f8fa</color>
+    <color name="shamrock">#50c99c</color>
+    <color name="mojo">#ca4c41</color>
+    <color name="boulder">#797979</color>
+    <color name="silver_chalice">#ACACAC</color>
+    <color name="silver_sand">#CACACA</color>
+    <color name="pale_sky">#667a87</color>
+    <color name="mercury">#e7e7e7</color>
 </resources>

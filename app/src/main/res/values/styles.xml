@@ -1,38 +1,30 @@
 <resources>
 
-    <!-- Base application theme-->
-    <style name="AppTheme" parent="Theme.MaterialComponents.Light.NoActionBar">
-        <item name="android:windowBackground">@drawable/window_background_color</item>
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="colorAccent">@color/colorAccent</item>
+    <style name="IDVoice.AppTheme" parent="Theme.MaterialComponents.Light.NoActionBar">
+
+        <item name="colorPrimary">@color/primary_color</item>
+        <item name="colorPrimaryVariant">@color/primary_color</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+
+        <item name="android:windowBackground">@color/black_haze</item>
+        <item name="colorPrimaryDark">@color/black_haze</item>
+        <item name="android:colorAccent">@color/shamrock</item>
     </style>
 
-    <!-- Theme for launch-->
-    <style name="AppThemeNotBarLaunch" parent="AppTheme">
+    <style name="IDVoice.Theme.Launch" parent="IDVoice.AppTheme">
         <item name="android:windowBackground">@drawable/splash_screen</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
     </style>
 
-    <!-- Style for dialogs-->
-    <style name="CustomThemeOverlayAlertDialog" parent="@style/ThemeOverlay.MaterialComponents.MaterialAlertDialog">
-        <item name="shapeAppearanceOverlay">@style/ShapeAppearanceOverlay.MyApp.Dialog.Rounded</item>
-        <item name="android:windowMinWidthMajor">90%</item>
-        <item name="android:windowMinWidthMinor">90%</item>
-        <item name="android:background">@android:color/transparent</item>
-        <item name="android:windowBackground">@drawable/popup_background</item>
-    </style>
-
-    <style name="ShapeAppearanceOverlay.MyApp.Dialog.Rounded" parent="">
-        <item name="cornerFamily">rounded</item>
-        <item name="cornerSize">8dp</item>
-    </style>
-
-    <!-- Style for buttons-->
-    <style name="IDVoice.Button.Rounded" parent="Widget.MaterialComponents.Button">
-        <item name="cornerRadius">16dp</item>
-        <item name="android:textColor">@color/whiteBackground</item>
+    <style name="IDVoice.Widget.BackButton.Right" parent="@style/Widget.MaterialComponents.Button.TextButton">
+        <item name="android:text">@string/back</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:textColor">@color/boulder</item>
+        <item name="icon">@drawable/ic_round_arrow_forward_ios_24</item>
+        <item name="iconGravity">textEnd</item>
+        <item name="iconTint">@null</item>
+        <item name="android:paddingEnd">8dp</item>
     </style>
 
 </resources>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <attr name="message_about_process" format="string" />
+    <attr name="message_about_phrase" format="string" />
+    <attr name="phrase_for_pronouncing" format="string" />
+
+    <declare-styleable name="RecordAndProcessView">
+        <attr name="message_about_process" />
+    </declare-styleable>
+
+    <declare-styleable name="RecordAndProcessPhraseView">
+        <attr name="message_about_process" />
+        <attr name="message_about_phrase" />
+        <attr name="phrase_for_pronouncing" />
+    </declare-styleable>
+
+    <declare-styleable name="PhraseEnrollmentView">
+        <attr name="message_about_process" />
+        <attr name="message_about_phrase" />
+        <attr name="phrase_for_pronouncing" />
+    </declare-styleable>
+</resources>
