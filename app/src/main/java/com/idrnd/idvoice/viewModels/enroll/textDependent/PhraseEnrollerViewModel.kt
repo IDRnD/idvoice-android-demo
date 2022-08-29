@@ -182,10 +182,6 @@ class PhraseEnrollerViewModel : ViewModel() {
                         warningMessageForUser.postValue(messageAboutSpeechIsNotEnough)
                         continue
                     }
-                    TOO_LONG_REVERBERATION -> {
-                        warningMessageForUser.postValue(messageAboutLongReverberation)
-                        continue
-                    }
                     OK -> {
                         // Nothing
                     }
