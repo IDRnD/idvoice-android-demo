@@ -167,11 +167,6 @@ class EnrollerViewModel : ViewModel() {
                         resetProgressAndUpdateOutputFile()
                         continue
                     }
-                    TOO_LONG_REVERBERATION -> {
-                        warningMessageForUser.postValue(messageAboutLongReverberation)
-                        resetProgressAndUpdateOutputFile()
-                        continue
-                    }
                     OK -> {
                         // Nothing
                     }
