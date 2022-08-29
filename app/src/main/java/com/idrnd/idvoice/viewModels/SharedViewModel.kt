@@ -99,8 +99,8 @@ class SharedViewModel : ViewModel() {
         val initDataFolder = AssetsExtractor(context).extractAssets()
 
         // Make init data for TD and TI biometrics modes
-        val textDependentInitData = File(initDataFolder, VERIFY_INIT_DATA_TD_ACCURATE_SUBPATH).absolutePath
-        val textIndependentInitData = File(initDataFolder, VERIFY_INIT_DATA_TI_SUBPATH).absolutePath
+        val textDependentInitData = File(initDataFolder, VERIFY_INIT_DATA_MIC_V1_SUBPATH).absolutePath
+        val textIndependentInitData = File(initDataFolder, VERIFY_INIT_DATA_MIC_V1_SUBPATH).absolutePath
 
         // Init verify engines
         deferredVoiceTemplateFactories = viewModelScope.async(Dispatchers.Default) {
@@ -119,7 +119,7 @@ class SharedViewModel : ViewModel() {
 
         // Init a liveness engine
         deferredAntispoofEngine = viewModelScope.async(Dispatchers.Default) {
-            AntispoofEngine(File(initDataFolder, ANTISPOOF_INIT_DATA_DEFAULT_SUBPATH).absolutePath)
+            AntispoofEngine(File(initDataFolder, ANTISPOOF_INIT_DATA_SUBPATH).absolutePath)
         }
 
         // Init speech summary engine

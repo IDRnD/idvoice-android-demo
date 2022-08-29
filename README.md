@@ -1,6 +1,6 @@
 # Android IDVoice sample application
 
-**The application was tested with VoiceSDK 3.2.4.**
+**The application was tested with VoiceSDK 3.7.0.**
 
 This sample application is intended to demonstrate the VoiceSDK voice verification and anti-spoofing
 capabilities:
@@ -13,6 +13,11 @@ capabilities:
 - It provides simple text-independent enrollment and verification scenario: user enrolls with 10
   seconds of their speech to create a strong voiceprint. By enrolling for the second time user
   overwrites their voiceprint.
+
+- It provides text-independent continuous verification scenario without anti-spoofing check.
+
+- It implements simple logging for voice verification results and anti-spoofing checks along with
+  audio records. Collected logs can be sent via email or instant messaging app.
 
 The application also demonstrates the way to validate user audio input by performing speech endpoint
 detection and estimating net speech length.
@@ -32,10 +37,6 @@ guide][3] in order to get more detailed information and best practices for the l
 - This repository does not contain VoiceSDK distribution itself. Please copy the
   `java/voicesdk-aar-full-release.aar` file from the IDVoice + IDLive Android package received from
   ID R&D to the `voicesdk/` folder in order to be able to build and run the application.
-
-- If you prefer not to use one of the voice verification methods, you can simply remove the
-  corresponding folder from the AAR's `voicesdk/voicesdk.aar/assets/verify_init_data/` folder
-  (text-independent - `TI-mic`, text-dependent - `TD-mic`).
 
 - For _x86_ and _x86_64_ emulator builds poor performance is expected, even with KVM enabled. Also,
   as QEMU emulation is imperfect, you can see occasional crashes. Please use newer images to
