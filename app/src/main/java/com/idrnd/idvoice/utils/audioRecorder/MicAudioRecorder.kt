@@ -12,7 +12,6 @@ import kotlinx.coroutines.*
 import java.nio.ByteBuffer
 import java.util.concurrent.ConcurrentLinkedDeque
 import kotlin.concurrent.thread
-import kotlin.math.abs
 import kotlin.math.ceil
 
 /**
@@ -20,10 +19,12 @@ import kotlin.math.ceil
  *
  * @exception IllegalArgumentException if a sample rate is unsupported.
  */
-class MicAudioRecorder @Throws(IllegalArgumentException::class) constructor(
+class MicAudioRecorder
+@Throws(IllegalArgumentException::class)
+constructor(
     val sampleRate: Int,
     // 32 ms is required minimum for most VoiceSDK operation
-    minAudioLengthInByteChunkInMs: Int = 32
+    minAudioLengthInByteChunkInMs: Int = 32,
 ) : Iterator<ByteArray> {
 
     val encoding
@@ -41,13 +42,12 @@ class MicAudioRecorder @Throws(IllegalArgumentException::class) constructor(
         private set
 
     init {
-
         minBufferSizeByAudioLength = getAudioSize(minAudioLengthInByteChunkInMs.toLong(), sampleRate)
 
         bufferSize = getMinBufferSize(
             sampleRate,
             RECORDER_CHANNELS,
-            RECORDER_AUDIO_ENCODING
+            RECORDER_AUDIO_ENCODING,
         )
 
         // If min buffer size is greater than required by user than write a log about it but doesn't break work of
@@ -69,7 +69,6 @@ class MicAudioRecorder @Throws(IllegalArgumentException::class) constructor(
         stopAudioRecording()
 
         recordingThread = thread(true) {
-
             if ((recorder == null) || (recorder!!.state == STATE_UNINITIALIZED)) {
                 recorder = createMediaAudioRecord()
             }
@@ -83,7 +82,6 @@ class MicAudioRecorder @Throws(IllegalArgumentException::class) constructor(
                     val byteBuffer = ByteBuffer.allocate(minBufferSizeByAudioLength * 2)
 
                     while ((recorder != null) && (recorder!!.recordingState == RECORDSTATE_RECORDING)) {
-
                         // Check on a paused state
                         if (isPaused) {
                             continue
@@ -211,7 +209,6 @@ class MicAudioRecorder @Throws(IllegalArgumentException::class) constructor(
     @Throws(IllegalArgumentException::class)
     private fun createMediaAudioRecord(): AudioRecord {
         try {
-
             val audioSource = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 UNPROCESSED
             } else {
@@ -242,7 +239,7 @@ class MicAudioRecorder @Throws(IllegalArgumentException::class) constructor(
                     sampleRate,
                     RECORDER_CHANNELS,
                     RECORDER_AUDIO_ENCODING,
-                    bufferSize
+                    bufferSize,
                 )
             }
         } catch (e: IllegalArgumentException) {
@@ -264,77 +261,15 @@ class MicAudioRecorder @Throws(IllegalArgumentException::class) constructor(
         private const val RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT
 
         /**
-         * Calculating the average amplitude of the passed byte array with PCM16 encoding
-         *
-         * @param byteArray pass byte array
-         * @return average amplitude in range 0...32767
-         */
-        fun averageAmplitudeEncodedPcm16(byteArray: ByteArray): Int {
-
-            val numBytesInSample = 2
-            var averageAmplitude = 0
-            var iter = 0
-            while (iter < byteArray.size / numBytesInSample) {
-
-                val firstByte = byteArray[iter * numBytesInSample].toInt()
-                val secondByte = byteArray[iter * numBytesInSample + 1].toInt()
-
-                // Signed Int is calculated from two bytes
-                averageAmplitude += abs(((firstByte shl 8) or secondByte))
-
-                iter++
-            }
-
-            if (iter == 0) {
-                return 0
-            }
-
-            return averageAmplitude / iter
-        }
-
-        /**
-         * Calculating the norm average amplitude of the passed byte array with PCM16 encoding
-         *
-         * @param byteArray pass byte array
-         * @return norm average amplitude in range 0...1
-         */
-        fun normAverageAmplitudeEncodedPcm16(byteArray: ByteArray): Float {
-            return averageAmplitudeEncodedPcm16(byteArray).toFloat() / Short.MAX_VALUE
-        }
-
-        /**
-         * Get audio duration in seconds of number bytes (PCM16 only)
-         *
-         * @param numberBytes
-         * @param sampleRate
-         * @return audio duration in ms
-         */
-        fun getAudioDurationInMs(numberBytes: Int, sampleRate: Int): Float {
-            val bytePerSecond = sampleRate * 2
-            return ((numberBytes.toFloat() / bytePerSecond) * 1000)
-        }
-
-        /**
          * Get audio size in bytes from duration in seconds (PCM16 only)
          *
          * @param durationInMs
          * @param sampleRate
          * @return audio size in bytes
          */
-        fun getAudioSize(durationInMs: Long, sampleRate: Int): Int {
-            return getAudioSize(durationInMs.toFloat(), sampleRate)
-        }
-
-        /**
-         * Get audio size in bytes from duration in seconds (PCM16 only)
-         *
-         * @param durationInMs
-         * @param sampleRate
-         * @return audio size in bytes
-         */
-        fun getAudioSize(durationInMs: Float, sampleRate: Int): Int {
+        fun getAudioSize(durationInMs: Number, sampleRate: Int): Int {
             val bytePerSecond = sampleRate * 2
-            return ceil(durationInMs / 1000f * bytePerSecond).toInt()
+            return ceil(durationInMs.toFloat() / 1000f * bytePerSecond).toInt()
         }
     }
 }

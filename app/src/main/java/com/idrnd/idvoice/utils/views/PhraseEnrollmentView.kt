@@ -21,7 +21,7 @@ class PhraseEnrollmentView : ConstraintLayout {
     private val view = LayoutInflater.from(context).inflate(
         R.layout.phrase_enrollment_view,
         this,
-        true
+        true,
     )
 
     private val recordAndProcessPhraseView: RecordAndProcessPhraseView by lazy {
@@ -111,12 +111,12 @@ class PhraseEnrollmentView : ConstraintLayout {
         statusIndicators[index].isChecked = checked
     }
 
-    fun visualizeData(normalizedValue: Float) {
-        recordAndProcessPhraseView.visualizeData(normalizedValue)
+    fun visualize() {
+        recordAndProcessPhraseView.visualize()
     }
 
-    fun resetVisualization() {
-        recordAndProcessPhraseView.resetVisualization()
+    fun stopVisualization() {
+        recordAndProcessPhraseView.stopVisualization()
     }
 
     companion object {
@@ -128,7 +128,8 @@ class PhraseEnrollmentView : ConstraintLayout {
 
     enum class State {
         Record,
+        LivenessChecking,
         Process,
-        ProcessIsFinished
+        ProcessIsFinished,
     }
 }

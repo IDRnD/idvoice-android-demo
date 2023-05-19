@@ -16,7 +16,6 @@ class TemplateFileCreator(private val folderWithTemplates: File) {
      * @param override if template file exists and override param is true then override it else return an existed file.
      */
     fun createTemplateFile(filename: String, override: Boolean): File {
-
         val templateFile = File(folderWithTemplates, "$filename.bin")
 
         if (templateFile.exists() && override) {
