@@ -6,10 +6,12 @@
     android:layout_height="match_parent"
     android:background="@android:color/white">
 
-    <com.idrnd.idvoice.utils.views.SimpleCircle
+    <com.idrnd.idvoice.utils.views.lightCircle.LightCircle
         android:id="@+id/visualizer"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:layout_marginStart="64dp"
+        android:layout_marginEnd="64dp"
         android:visibility="visible"
         app:layout_constraintBottom_toTopOf="@+id/guideline3"
         app:layout_constraintEnd_toEndOf="parent"

@@ -15,8 +15,11 @@ import androidx.lifecycle.Lifecycle.Event.ON_RESUME
 import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.OnLifecycleEvent
 import com.idrnd.idvoice.R
+import com.idrnd.idvoice.utils.views.RecordAndProcessView.State.Process
 import com.idrnd.idvoice.utils.views.RecordAndProcessView.State.ProcessIsFinished
 import com.idrnd.idvoice.utils.views.RecordAndProcessView.State.Record
+import com.idrnd.idvoice.utils.views.lightCircle.LightCircle
+import com.idrnd.idvoice.utils.views.lightCircle.WaitingCallback
 
 /**
  * View that must record and process something.
@@ -26,7 +29,7 @@ class RecordAndProcessView : ConstraintLayout, LifecycleObserver {
     private val view = LayoutInflater.from(context).inflate(
         R.layout.record_and_process_view,
         this,
-        true
+        true,
     )
 
     private val container by lazy { view.findViewById<ViewGroup>(R.id.recordAndProcessViewContainer) }
@@ -79,7 +82,7 @@ class RecordAndProcessView : ConstraintLayout, LifecycleObserver {
 
     private val processingImage: ImageView by lazy { view.findViewById(R.id.processingImage) }
     private val messageAboutProcessView: TextView by lazy { view.findViewById(R.id.messageAboutProcess) }
-    private val visualizer: SimpleCircle by lazy { view.findViewById(R.id.visualizer) }
+    private val visualizer: LightCircle by lazy { view.findViewById(R.id.visualizer) }
 
     var messageAboutProcess
         set(value) { messageAboutProcessView.text = value }
@@ -98,20 +101,25 @@ class RecordAndProcessView : ConstraintLayout, LifecycleObserver {
         }
     }
 
+    private val waitingCallback = WaitingCallback(350L) {
+        handler.post { visualizer.lightOff() }
+    }
+
     /**
      * Visualize data. For example audio data from recorder.
      */
-    fun visualizeData(normalizedValue: Float) {
-        visualizer.setNormalizedRadius(normalizedValue)
+    fun visualize() {
+        waitingCallback.waitFurther()
+        if (!visualizer.isLightOn) visualizer.lightOn()
     }
 
-    fun resetVisualization() {
-        visualizer.setNormalizedRadius(0f)
+    fun stopVisualization() {
+        visualizer.lightOff()
     }
 
     @OnLifecycleEvent(ON_RESUME)
     fun onResume() {
-        resetVisualization()
+        stopVisualization()
     }
 
     override fun setBackground(background: Drawable?) {
@@ -140,6 +148,6 @@ class RecordAndProcessView : ConstraintLayout, LifecycleObserver {
     enum class State {
         Record,
         Process,
-        ProcessIsFinished
+        ProcessIsFinished,
     }
 }

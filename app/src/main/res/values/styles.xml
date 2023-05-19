@@ -17,12 +17,12 @@
         <item name="android:statusBarColor">@android:color/transparent</item>
     </style>
 
-    <style name="IDVoice.Widget.BackButton.Right" parent="@style/Widget.MaterialComponents.Button.TextButton">
+    <style name="IDVoice.Widget.BackButton.Left" parent="@style/Widget.MaterialComponents.Button.TextButton">
         <item name="android:text">@string/back</item>
         <item name="android:textSize">13sp</item>
         <item name="android:textColor">@color/boulder</item>
-        <item name="icon">@drawable/ic_round_arrow_forward_ios_24</item>
-        <item name="iconGravity">textEnd</item>
+        <item name="icon">@drawable/round_arrow_back_ios_24</item>
+        <item name="iconGravity">textStart</item>
         <item name="iconTint">@null</item>
         <item name="android:paddingEnd">8dp</item>
     </style>

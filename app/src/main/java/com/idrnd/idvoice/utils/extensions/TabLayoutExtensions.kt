@@ -12,12 +12,13 @@ import com.google.android.material.tabs.TabLayout
 inline fun TabLayout?.addOnTabSelectedListener(
     crossinline onTabReselected: (tab: TabLayout.Tab?) -> Unit = { },
     crossinline onTabUnselected: (tab: TabLayout.Tab?) -> Unit = { },
-    crossinline onTabSelected: (tab: TabLayout.Tab?) -> Unit = { }
+    crossinline onTabSelected: (tab: TabLayout.Tab?) -> Unit = { },
 ) {
-    this?.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
-        override fun onTabReselected(tab: TabLayout.Tab?) = onTabReselected(tab)
-        override fun onTabUnselected(tab: TabLayout.Tab?) = onTabUnselected(tab)
-        override fun onTabSelected(tab: TabLayout.Tab?) = onTabSelected(tab)
-    }
+    this?.addOnTabSelectedListener(
+        object : TabLayout.OnTabSelectedListener {
+            override fun onTabReselected(tab: TabLayout.Tab?) = onTabReselected(tab)
+            override fun onTabUnselected(tab: TabLayout.Tab?) = onTabUnselected(tab)
+            override fun onTabSelected(tab: TabLayout.Tab?) = onTabSelected(tab)
+        },
     )
 }

@@ -5,6 +5,18 @@
     android:layout_height="match_parent"
     android:background="@color/black_haze">
 
+    <com.idrnd.idvoice.utils.views.lightCircle.LightCircle
+        android:id="@+id/visualizer"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="64dp"
+        android:layout_marginEnd="64dp"
+        android:visibility="visible"
+        app:layout_constraintBottom_toTopOf="@+id/speechProgressBar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tiEnrollmentTipsTextView" />
+
     <com.airbnb.lottie.LottieAnimationView
         android:id="@+id/processingImage2"
         android:layout_width="80dp"
@@ -41,22 +53,22 @@
         android:id="@+id/tiEnrollmentTipsTextView"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="32dp"
-        android:layout_marginEnd="32dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
         android:text="@string/enroll_tips"
         android:textAppearance="@style/TextAppearance.AppCompat.Large"
-        app:layout_constraintBottom_toTopOf="@+id/speechProgressBar"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/headerTiEnrollmentTipsTextView" />
 
     <TextView
         android:id="@+id/headerTiEnrollmentTipsTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="64dp"
         android:text="@string/header_about_enroll_tips"
-        app:layout_constraintBottom_toTopOf="@+id/tiEnrollmentTipsTextView"
-        app:layout_constraintStart_toStartOf="@+id/tiEnrollmentTipsTextView" />
+        app:layout_constraintStart_toStartOf="@+id/tiEnrollmentTipsTextView"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <ProgressBar
         android:id="@+id/speechProgressBar"

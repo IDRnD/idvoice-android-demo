@@ -10,7 +10,11 @@ import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.lifecycle.LifecycleObserver
 import com.idrnd.idvoice.R
-import com.idrnd.idvoice.utils.views.EnrollerView.State.*
+import com.idrnd.idvoice.utils.views.EnrollerView.State.Process
+import com.idrnd.idvoice.utils.views.EnrollerView.State.ProcessIsFinished
+import com.idrnd.idvoice.utils.views.EnrollerView.State.Record
+import com.idrnd.idvoice.utils.views.lightCircle.LightCircle
+import com.idrnd.idvoice.utils.views.lightCircle.WaitingCallback
 
 /**
  * View for text independent voice enrollment.
@@ -20,7 +24,7 @@ class EnrollerView : ConstraintLayout, LifecycleObserver {
     private val view = LayoutInflater.from(context).inflate(
         R.layout.ti_enroller_view,
         this,
-        true
+        true,
     )
 
     /**
@@ -40,6 +44,7 @@ class EnrollerView : ConstraintLayout, LifecycleObserver {
                     titleTiTipsViewView.visibility = GONE
                     tipsTextView.visibility = GONE
                     progressBar.visibility = GONE
+                    visualizer.visibility = GONE
 
                     processingImage.visibility = VISIBLE
                     messageAboutProcessView.visibility = VISIBLE
@@ -49,6 +54,7 @@ class EnrollerView : ConstraintLayout, LifecycleObserver {
                     titleTiTipsViewView.visibility = GONE
                     tipsTextView.visibility = GONE
                     progressBar.visibility = GONE
+                    visualizer.visibility = GONE
 
                     processingImage.visibility = GONE
                     messageAboutProcessView.visibility = GONE
@@ -58,6 +64,7 @@ class EnrollerView : ConstraintLayout, LifecycleObserver {
                     titleTiTipsViewView.visibility = VISIBLE
                     tipsTextView.visibility = VISIBLE
                     progressBar.visibility = VISIBLE
+                    visualizer.visibility = VISIBLE
 
                     processingImage.visibility = GONE
                     messageAboutProcessView.visibility = GONE
@@ -70,6 +77,7 @@ class EnrollerView : ConstraintLayout, LifecycleObserver {
     private val tipsTextView: TextView by lazy { view.findViewById(R.id.headerTiEnrollmentTipsTextView) }
     private val titleTiTipsViewView: TextView by lazy { view.findViewById(R.id.tiEnrollmentTipsTextView) }
     private val progressBar: ProgressBar by lazy { view.findViewById(R.id.speechProgressBar) }
+    private val visualizer: LightCircle by lazy { view.findViewById(R.id.visualizer) }
 
     private val messageAboutProcessView: TextView by lazy { view.findViewById(R.id.messageAboutProcess2) }
     private val processingImage: ImageView by lazy { view.findViewById(R.id.processingImage2) }
@@ -80,6 +88,15 @@ class EnrollerView : ConstraintLayout, LifecycleObserver {
 
     fun setProgress(progress: Int) {
         progressBar.progress = progress
+    }
+
+    private val waitingCallback = WaitingCallback(350L) {
+        handler.post { visualizer.lightOff() }
+    }
+
+    fun visualize() {
+        waitingCallback.waitFurther()
+        if (!visualizer.isLightOn) visualizer.lightOn()
     }
 
     companion object {
@@ -97,6 +114,6 @@ class EnrollerView : ConstraintLayout, LifecycleObserver {
     enum class State {
         Record,
         Process,
-        ProcessIsFinished
+        ProcessIsFinished,
     }
 }

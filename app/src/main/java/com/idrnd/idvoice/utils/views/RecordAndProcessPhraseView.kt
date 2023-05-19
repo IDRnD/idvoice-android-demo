@@ -21,7 +21,7 @@ class RecordAndProcessPhraseView : ConstraintLayout {
     private val view = LayoutInflater.from(context).inflate(
         R.layout.record_and_process_phrase_view,
         this,
-        true
+        true,
     )
 
     private val rootRecordAndProcessPhraseView: ViewGroup by lazy { view.findViewById(R.id.rootRecordAndProcessPhraseView) }
@@ -105,12 +105,12 @@ class RecordAndProcessPhraseView : ConstraintLayout {
         }
     }
 
-    fun visualizeData(normalizedValue: Float) {
-        recordAndProcessView.visualizeData(normalizedValue)
+    fun visualize() {
+        recordAndProcessView.visualize()
     }
 
-    fun resetVisualization() {
-        recordAndProcessView.resetVisualization()
+    fun stopVisualization() {
+        recordAndProcessView.stopVisualization()
     }
 
     companion object {
@@ -123,6 +123,6 @@ class RecordAndProcessPhraseView : ConstraintLayout {
     enum class State {
         Record,
         Process,
-        ProcessIsFinished
+        ProcessIsFinished,
     }
 }
