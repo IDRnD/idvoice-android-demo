@@ -26,4 +26,9 @@
     <string name="voice_is_genuine">Voice is genuine</string>
     <string name="please_continue_talking">Well done. Please continue talking.</string>
     <string name="speech_is_not_live_enroll_again">Speech is not live. Synthesized voices can\'t be used for enrollment. Please record again.</string>
+    <string name="renew_license">Renew License</string>
+    <string name="license_issue">License issue</string>
+    <string name="your_voicesdk_license_is_invalid">Your VoiceSDK license is invalid. To continue using the app, please tap on the \“Renew License\” button below to get in touch with our manager.</string>
+    <string name="your_voicesdk_license_has_expired">Your VoiceSDK license has expired. To continue using the app, please tap on the \“Renew License\” button below to get in touch with our manager.</string>
+    <string name="license_expires_at">License expires at %s</string>
 </resources>

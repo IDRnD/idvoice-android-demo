@@ -4,6 +4,8 @@ import android.app.Application
 import android.content.Context
 import com.idrnd.idvoice.preferences.GlobalPrefs
 import com.idrnd.idvoice.utils.TemplateFileCreator
+import com.idrnd.idvoice.utils.license.IdrndLicense
+import com.idrnd.idvoice.utils.license.LicenseStatus
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -42,8 +44,20 @@ class MainApplication : Application() {
         runBlocking { deferredVoiceTemplateMatcher.await() }
     }
 
+    lateinit var voiceSdkLicense: IdrndLicense
+        private set
+
     override fun onCreate() {
         super.onCreate()
+
+        // Set license (the contents of VoiceSDK <release bundle>/license/license-*.txt file)
+        voiceSdkLicense = IdrndLicense("PUT_HERE_CONTENT_OF_LICENSE_FILE")
+
+        if (voiceSdkLicense.licenseStatus != LicenseStatus.Valid) {
+            // We prevent user to use the application if the license is not valid,
+            // so we don't need to initialize anything here.
+            return
+        }
 
         val sharedPreferencesName = "my_preferences"
         val sharedPreferences = getSharedPreferences(sharedPreferencesName, Context.MODE_PRIVATE)
