@@ -1,6 +1,6 @@
 # Android IDVoice sample application
 
-**The application was tested with VoiceSDK 3.11.0.**
+**The application was tested with VoiceSDK 3.11.2.**
 
 This sample application is intended to demonstrate the VoiceSDK voice verification and anti-spoofing
 capabilities:

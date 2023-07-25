@@ -36,8 +36,7 @@ class EnrollerFragment : Fragment(R.layout.ti_enroller_fragment) {
         // Set listeners/observers
         viewModel.messageId.observe(viewLifecycleOwner) { message ->
             message ?: return@observe
-
-            Toast.makeText(requireContext(), message, LENGTH_LONG).show()
+            Toast.makeText(requireActivity().applicationContext, message, LENGTH_LONG).show()
         }
 
         viewModel.enrollmentProgress.observe(viewLifecycleOwner) { progress ->

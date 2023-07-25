@@ -16,6 +16,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.transition.TransitionManager
 import com.google.android.material.tabs.TabLayout
+import com.idrnd.idvoice.MainApplication
 import com.idrnd.idvoice.R
 import com.idrnd.idvoice.preferences.GlobalPrefs
 import com.idrnd.idvoice.useCaseSelector.UseCaseSelectorViewModel.Companion.UseCaseSelectorViewModelFactory
@@ -30,6 +31,7 @@ class UseCaseSelectorFragment : Fragment(R.layout.use_case_selector_fragment) {
     private lateinit var enrollButton: Button
     private lateinit var verifyButton: View
     private lateinit var voiceSdkVersion: TextView
+    private lateinit var voiceSdkLicenseExpirationDate: TextView
 
     private val viewModel: UseCaseSelectorViewModel by viewModels { UseCaseSelectorViewModelFactory }
 
@@ -60,6 +62,7 @@ class UseCaseSelectorFragment : Fragment(R.layout.use_case_selector_fragment) {
         enrollButton = view.findViewById(R.id.enrollButton)
         verifyButton = view.findViewById(R.id.verifyButton)
         voiceSdkVersion = view.findViewById(R.id.voiceSdkVersion)
+        voiceSdkLicenseExpirationDate = view.findViewById(R.id.voiceSdkLicenseExpirationDate)
 
         // Set listeners on views
         biometricAnalysisTypeTabs.addOnTabSelectedListener(
@@ -110,14 +113,17 @@ class UseCaseSelectorFragment : Fragment(R.layout.use_case_selector_fragment) {
             verifyButton.isClickable = true
         }
 
-        // Set a voice sdk version on the screen
+        // Set VoiceSDK version on the screen
         voiceSdkVersion.text = "VoiceSDK ${BuildInfo.get().version}"
+
+        // Set VoiceSDK license expiration date
+        val stringExpirationDate =
+            (requireActivity().application as MainApplication).voiceSdkLicense.stringExpirationDate
+        voiceSdkLicenseExpirationDate.text = getString(R.string.license_expires_at, stringExpirationDate)
 
         // Subscribe on view model
         viewModel.messageId.observe(viewLifecycleOwner) { messageId ->
-            messageId ?: return@observe
-
-            Toast.makeText(requireContext(), messageId, LENGTH_LONG).show()
+            Toast.makeText(requireActivity().applicationContext, messageId, LENGTH_LONG).show()
         }
 
         viewModel.enrollmentButtonTitle.observe(viewLifecycleOwner) { title ->
