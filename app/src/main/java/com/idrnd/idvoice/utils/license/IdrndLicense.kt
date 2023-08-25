@@ -48,7 +48,7 @@ class IdrndLicense(license: String) {
             return LicenseStatus.Invalid
         }
 
-        val stringDate = BuildInfo.get().licenseInfo.split(" ").last()
+        val stringDate = BuildInfo.get().licenseExpirationDate
         val optionalExpirationDate = try {
             dateFormat.parse(stringDate)
         } catch (e: ParseException) {
