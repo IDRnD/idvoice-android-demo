@@ -19,6 +19,7 @@ import com.idrnd.idvoice.utils.views.PhraseEnrollmentView.State
 import com.idrnd.idvoice.utils.views.PhraseEnrollmentView.State.Process
 import com.idrnd.idvoice.utils.views.PhraseEnrollmentView.State.ProcessIsFinished
 import net.idrnd.voicesdk.liveness.LivenessEngine
+import net.idrnd.voicesdk.media.QualityCheckEngine
 import net.idrnd.voicesdk.verify.VoiceTemplateFactory
 import java.io.File
 
@@ -27,6 +28,7 @@ class PhraseEnrollerViewModel(
     templateFactory: VoiceTemplateFactory,
     templateFileCreator: TemplateFileCreator,
     livenessEngine: LivenessEngine,
+    qualityCheckEngine: QualityCheckEngine
 ) : ViewModel() {
 
     val isSpeechRecorded = MutableLiveData<Unit>()
@@ -57,7 +59,15 @@ class PhraseEnrollerViewModel(
                         SpeechQualityStatus.TooNoisy -> {
                             messageId.postValue(R.string.speech_is_too_noisy)
                         }
-
+                        SpeechQualityStatus.TooSmallSpeechTotalLength -> {
+                            messageId.postValue(R.string.total_speech_length_is_not_enough)
+                        }
+                        SpeechQualityStatus.TooSmallSpeechRelativeLength -> {
+                            messageId.postValue(R.string.relative_speech_length_is_not_enough)
+                        }
+                        SpeechQualityStatus.MultipleSpeakersDetected -> {
+                            messageId.postValue(R.string.multi_speaker_detected)
+                        }
                         SpeechQualityStatus.Ok -> {
                             messageId.postValue(R.string.please_continue_talking)
                         }
@@ -112,6 +122,7 @@ class PhraseEnrollerViewModel(
                     state.postValue(State.Record)
                 }
             },
+            qualityCheckEngine,
         )
 
         // Init cache dir for output files
@@ -159,6 +170,7 @@ class PhraseEnrollerViewModel(
                     app.voiceTemplateFactory,
                     app.templateFileCreator,
                     app.livenessEngine,
+                    app.qualityCheckEngine
                 )
             }
         }

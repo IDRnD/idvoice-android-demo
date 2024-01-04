@@ -30,6 +30,8 @@ import com.idrnd.idvoice.verification.results.BiometricsResultFragment.Companion
 import com.idrnd.idvoice.verification.results.BiometricsResultFragment.Companion.BUNDLE_VERIFICATION_PROBABILITY
 import net.idrnd.voicesdk.core.common.VoiceTemplate
 import net.idrnd.voicesdk.liveness.LivenessEngine
+import net.idrnd.voicesdk.media.QualityCheckEngine
+import net.idrnd.voicesdk.media.QualityCheckScenario
 import net.idrnd.voicesdk.verify.VoiceTemplateFactory
 import net.idrnd.voicesdk.verify.VoiceTemplateMatcher
 import java.io.File
@@ -41,6 +43,7 @@ class VerifierViewModel(
     private val templateMatcher: VoiceTemplateMatcher,
     private val templateFactory: VoiceTemplateFactory,
     livenessEngine: LivenessEngine,
+    qualityCheckEngine: QualityCheckEngine,
 ) : ViewModel() {
 
     val onResultFragment = LiveEvent<Fragment>()
@@ -58,17 +61,23 @@ class VerifierViewModel(
         get() = if (GlobalPrefs.biometricsType == TextDependent) 3f else 8f
 
     private val cacheDir = context.cacheDir
+
+    // We use recommended IDVoice SDK thresholds for verifications based on biometrics type.
+    private val qualityCheckMetricsThresholds = when (GlobalPrefs.biometricsType) {
+        TextDependent -> qualityCheckEngine.getRecommendedThresholds(QualityCheckScenario.VERIFY_TD_VERIFICATION)
+        TextIndependent -> qualityCheckEngine.getRecommendedThresholds(QualityCheckScenario.VERIFY_TI_VERIFICATION)
+    }
     private val speechRecorder = SpeechRecorder(
         context,
         GlobalPrefs.sampleRate,
         // We use values from IDVoice & IDLive Voice best practices guideline
         SpeechRecorderParams(
-            minSpeechLengthMs,
-            minSnrDb,
+            qualityCheckMetricsThresholds,
             CheckLivenessType.CheckLiveness,
             if (GlobalPrefs.biometricsType == TextDependent) WaitingForEndSpeech else AsSoonAsPossible,
         ),
         GlobalPrefs.livenessThreshold,
+        qualityCheckEngine = qualityCheckEngine
     )
 
     init {
@@ -106,8 +115,17 @@ class VerifierViewModel(
             }
 
             override fun onComplete(audioFile: File, speechParams: SpeechParams) {
-                if (speechParams.speechQualityStatus != SpeechQualityStatus.Ok) {
-                    messageId.postValue(R.string.speech_is_too_noisy)
+                // Get quality check error message.
+                val qualityErrorMessage = when (speechParams.speechQualityStatus) {
+                    SpeechQualityStatus.TooNoisy -> R.string.speech_is_too_noisy
+                    SpeechQualityStatus.TooSmallSpeechTotalLength -> R.string.total_speech_length_is_not_enough
+                    SpeechQualityStatus.TooSmallSpeechRelativeLength -> R.string.relative_speech_length_is_not_enough
+                    SpeechQualityStatus.MultipleSpeakersDetected -> R.string.multi_speaker_detected
+                    SpeechQualityStatus.Ok -> null // No error message needed
+                }
+                // Show quality check error message if any and continue recording.
+                if (qualityErrorMessage != null) {
+                    messageId.postValue(qualityErrorMessage)
                     state.postValue(Record)
                     speechRecorder.startRecord(getNewCacheFile())
                     return
@@ -185,6 +203,7 @@ class VerifierViewModel(
                     app.voiceTemplateMatcher,
                     app.voiceTemplateFactory,
                     app.livenessEngine,
+                    app.qualityCheckEngine
                 )
             }
         }

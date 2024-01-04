@@ -2,10 +2,10 @@ package com.idrnd.idvoice.utils.speech.recorders
 
 import com.idrnd.idvoice.utils.speech.CheckLivenessType
 import com.idrnd.idvoice.utils.speech.DecisionToStopRecording
+import net.idrnd.voicesdk.media.QualityCheckMetricsThresholds
 
 data class SpeechRecorderParams(
-    val minSpeechLengthInMs: Float,
-    val minSnrInDb: Float,
+    val qualityCheckMetricsThresholds: QualityCheckMetricsThresholds,
     val checkLivenessType: CheckLivenessType,
     val decisionToStopRecording: DecisionToStopRecording,
 )

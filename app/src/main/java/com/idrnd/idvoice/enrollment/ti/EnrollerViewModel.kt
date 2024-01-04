@@ -19,6 +19,7 @@ import com.idrnd.idvoice.utils.views.EnrollerView.State
 import com.idrnd.idvoice.utils.views.EnrollerView.State.Process
 import com.idrnd.idvoice.utils.views.EnrollerView.State.ProcessIsFinished
 import net.idrnd.voicesdk.liveness.LivenessEngine
+import net.idrnd.voicesdk.media.QualityCheckEngine
 import net.idrnd.voicesdk.verify.VoiceTemplateFactory
 import java.io.File
 
@@ -27,6 +28,7 @@ class EnrollerViewModel(
     templateFactory: VoiceTemplateFactory,
     templateFileCreator: TemplateFileCreator,
     livenessEngine: LivenessEngine,
+    qualityCheckEngine: QualityCheckEngine
 ) : ViewModel() {
 
     val enrollmentProgress = MutableLiveData(0)
@@ -55,7 +57,18 @@ class EnrollerViewModel(
                         SpeechQualityStatus.TooNoisy -> {
                             messageId.postValue(R.string.speech_is_too_noisy)
                         }
+                        SpeechQualityStatus.TooSmallSpeechTotalLength -> {
+                            messageId.postValue(R.string.total_speech_length_is_not_enough)
+                        }
+                        // We will never get this value due to 0f value from MIN_RELATIVE_SPEECH_LENGTH_FOR_CHUNKS_IN_MS.
+                        // Anyways we are defining it here for consistency.
+                        SpeechQualityStatus.TooSmallSpeechRelativeLength -> {
+                            messageId.postValue(R.string.relative_speech_length_is_not_enough)
+                        }
 
+                        SpeechQualityStatus.MultipleSpeakersDetected -> {
+                            messageId.postValue(R.string.multi_speaker_detected)
+                        }
                         SpeechQualityStatus.Ok -> {
                             messageId.postValue(R.string.please_continue_talking)
                         }
@@ -112,6 +125,7 @@ class EnrollerViewModel(
                     this@EnrollerViewModel.isSpeechRecorded.postValue(Unit)
                 }
             },
+            qualityCheckEngine
         )
     }
 
@@ -155,6 +169,7 @@ class EnrollerViewModel(
                     app.voiceTemplateFactory,
                     app.templateFileCreator,
                     app.livenessEngine,
+                    app.qualityCheckEngine
                 )
             }
         }

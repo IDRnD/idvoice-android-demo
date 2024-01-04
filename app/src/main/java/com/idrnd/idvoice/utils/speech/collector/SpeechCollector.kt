@@ -1,42 +1,16 @@
 package com.idrnd.idvoice.utils.speech.collector
 
-import android.content.Context
-import net.idrnd.voicesdk.android.media.AssetsExtractor
 import net.idrnd.voicesdk.media.SpeechSummaryEngine
-import net.idrnd.voicesdk.media.SpeechSummaryStream
 import java.io.ByteArrayOutputStream
-import java.io.File
 
-class SpeechCollector : AutoCloseable {
+class SpeechCollector(
+    private val speechSummaryEngine: SpeechSummaryEngine,
+    private val minSpeechLengthMs: Float,
+    private val sampleRate: Int
+) : AutoCloseable {
 
+    private val speechSummaryStream = speechSummaryEngine.createStream(sampleRate)
     private val buffer = ByteArrayOutputStream()
-    private var speechSummaryEngine: SpeechSummaryEngine? = null
-    private val speechSummaryStream: SpeechSummaryStream
-    private val minSpeechLengthMs: Float
-
-    constructor(context: Context, minSpeechLengthMs: Float, sampleRate: Int) {
-        this.minSpeechLengthMs = minSpeechLengthMs
-        speechSummaryEngine = SpeechSummaryEngine(
-            File(
-                AssetsExtractor(context).extractAssets(),
-                AssetsExtractor.SPEECH_SUMMARY_INIT_DATA_SUBPATH,
-            ).absolutePath,
-        )
-        speechSummaryStream = speechSummaryEngine!!.createStream(sampleRate)
-    }
-
-    constructor(assetsFolder: File, minSpeechLengthMs: Float, sampleRate: Int) {
-        this.minSpeechLengthMs = minSpeechLengthMs
-        speechSummaryEngine = SpeechSummaryEngine(
-            File(assetsFolder, AssetsExtractor.SPEECH_SUMMARY_INIT_DATA_SUBPATH).absolutePath,
-        )
-        speechSummaryStream = speechSummaryEngine!!.createStream(sampleRate)
-    }
-
-    constructor(speechSummaryStream: SpeechSummaryStream, minSpeechLengthMs: Float) {
-        this.minSpeechLengthMs = minSpeechLengthMs
-        this.speechSummaryStream = speechSummaryStream
-    }
 
     fun addSamples(speech: ByteArray) {
         buffer.write(speech)
@@ -45,6 +19,23 @@ class SpeechCollector : AutoCloseable {
 
     fun isThereSpeechEnough(): Boolean {
         return speechSummaryStream.totalSpeechInfo.speechLengthMs >= minSpeechLengthMs
+    }
+
+    /**
+     * Tells whether recorded bytes contain speech since beginning or not.
+     * Use case:
+     * I've a recorded audio byte array with no speech in it, then those bytes can be discarded.
+     *
+     * It's false when array is empty.
+     * It's false when less than 0.5 seconds (in other words sampleRate/2) of samples were added.
+     * It's true when background length equals total length
+     */
+    fun hasNoSpeechSinceBeginning(): Boolean {
+        val recordedBytes = buffer.toByteArray()
+        if (recordedBytes.isEmpty()) return false
+        if (recordedBytes.size < sampleRate / 2) return false
+        val speechInfo = speechSummaryEngine.getSpeechSummary(recordedBytes, sampleRate).speechInfo
+        return speechInfo.backgroundLengthMs == speechInfo.totalLengthMs
     }
 
     fun getSpeech(): ByteArray {
@@ -63,18 +54,7 @@ class SpeechCollector : AutoCloseable {
 
     private var speechLengthLastTime = 0f
 
-    fun isSpeechLengthIncresedLastTime(): Boolean {
-        val currentSpeechLength = getSpeechLengthInMs()
-        if (currentSpeechLength > speechLengthLastTime) {
-            speechLengthLastTime = getSpeechLengthInMs()
-            speechLengthLastTime = currentSpeechLength
-            return true
-        }
-        speechLengthLastTime = getSpeechLengthInMs()
-        return false
-    }
-
     override fun close() {
-        speechSummaryEngine?.close()
+        speechSummaryEngine.close()
     }
 }

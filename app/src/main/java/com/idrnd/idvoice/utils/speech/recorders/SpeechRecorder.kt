@@ -14,7 +14,8 @@ import kotlinx.coroutines.runBlocking
 import net.idrnd.voicesdk.android.media.AssetsExtractor
 import net.idrnd.voicesdk.liveness.LivenessEngine
 import net.idrnd.voicesdk.liveness.LivenessResult
-import net.idrnd.voicesdk.media.SNRComputer
+import net.idrnd.voicesdk.media.QualityCheckEngine
+import net.idrnd.voicesdk.media.QualityCheckShortDescription
 import net.idrnd.voicesdk.media.SpeechEndpointDetector
 import net.idrnd.voicesdk.media.SpeechSummaryEngine
 import java.io.File
@@ -32,6 +33,7 @@ class SpeechRecorder(
     val speechRecorderParams: SpeechRecorderParams,
     private val livenessThreshold: Float = LIVENESS_THRESHOLD,
     var speechRecorderListener: SpeechRecorderListener? = null,
+    val qualityCheckEngine: QualityCheckEngine
 ) : AutoCloseable {
 
     private val audioRecorder: FileAudioRecorder
@@ -68,7 +70,6 @@ class SpeechRecorder(
     private lateinit var speechSummaryEngine: SpeechSummaryEngine
     private var speechEndpointDetector: SpeechEndpointDetector? = null
     private lateinit var speechCollector: SpeechCollector
-    private lateinit var snrComputer: SNRComputer
     private var lastProgress = -1f
 
     var isPreparing = false
@@ -135,11 +136,10 @@ class SpeechRecorder(
         }
 
         speechCollector = SpeechCollector(
-            speechSummaryEngine.createStream(sampleRate),
-            speechRecorderParams.minSpeechLengthInMs,
+            speechSummaryEngine,
+            speechRecorderParams.qualityCheckMetricsThresholds.minimumSpeechLengthMs,
+            sampleRate
         )
-
-        snrComputer = SNRComputer(File(assetsDir, AssetsExtractor.SNR_COMPUTER_INIT_DATA_SUBPATH).absolutePath)
     }
 
     /**
@@ -171,10 +171,15 @@ class SpeechRecorder(
 
                     speechCollector.addSamples(chunk)
 
-                    val progress = speechCollector.getSpeechLengthInMs() / speechRecorderParams.minSpeechLengthInMs
+                    val progress = speechCollector.getSpeechLengthInMs() / speechRecorderParams.qualityCheckMetricsThresholds.minimumSpeechLengthMs
                     if (progress != lastProgress) {
                         speechRecorderListener?.onProgress(progress)
                         lastProgress = progress
+                    }
+
+                    if(speechCollector.hasNoSpeechSinceBeginning()){
+                        speechCollector.reset()
+                        return@forEach
                     }
 
                     if (!speechCollector.isThereSpeechEnough()) return@forEach
@@ -191,15 +196,29 @@ class SpeechRecorder(
                     val speech = speechCollector.getSpeech()
                     val speechLengthInMs = speechCollector.getSpeechLengthInMs()
                     speechCollector.reset()
-                    val snr = snrComputer.compute(speech, sampleRate)
-                    if (snr < speechRecorderParams.minSnrInDb) {
-                        stopRecord()
+
+                    // Audio quality check.
+                    val qualityCheckResult = qualityCheckEngine.checkQuality(
+                        speech,
+                        sampleRate,
+                        speechRecorderParams.qualityCheckMetricsThresholds
+                    )
+
+                    val qualityStatus = when (qualityCheckResult.qualityCheckShortDescription) {
+                        QualityCheckShortDescription.TOO_NOISY -> SpeechQualityStatus.TooNoisy
+                        QualityCheckShortDescription.TOO_SMALL_SPEECH_TOTAL_LENGTH -> SpeechQualityStatus.TooSmallSpeechTotalLength
+                        QualityCheckShortDescription.TOO_SMALL_SPEECH_RELATIVE_LENGTH -> SpeechQualityStatus.TooSmallSpeechRelativeLength
+                        QualityCheckShortDescription.MULTIPLE_SPEAKERS_DETECTED -> SpeechQualityStatus.MultipleSpeakersDetected
+                        QualityCheckShortDescription.OK -> SpeechQualityStatus.Ok
+                        null -> throw IllegalStateException("QualityCheckShortDescription is null!")
+                    }
+
+                    if (qualityStatus != SpeechQualityStatus.Ok) {
                         speechRecorderListener?.onComplete(
                             outputFile,
                             SpeechParams(
-                                speechLengthInMs,
-                                snr,
-                                SpeechQualityStatus.TooNoisy,
+                                qualityStatus,
+                                qualityCheckResult,
                                 LivenessCheckStatus.Unknown,
                             ),
                         )
@@ -222,9 +241,8 @@ class SpeechRecorder(
                     speechRecorderListener?.onComplete(
                         outputFile,
                         SpeechParams(
-                            speechLengthInMs,
-                            snr,
-                            SpeechQualityStatus.Ok,
+                            qualityStatus,
+                            qualityCheckResult,
                             livenessCheckStatus,
                             livenessResult,
                         ),
@@ -260,7 +278,6 @@ class SpeechRecorder(
         }
         speechSummaryEngine.close()
         speechCollector.close()
-        snrComputer.close()
         speechEndpointDetector?.close()
     }
 

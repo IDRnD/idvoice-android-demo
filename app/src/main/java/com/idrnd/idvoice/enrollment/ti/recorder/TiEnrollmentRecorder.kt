@@ -15,6 +15,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import net.idrnd.voicesdk.android.media.AssetsExtractor
 import net.idrnd.voicesdk.liveness.LivenessEngine
+import net.idrnd.voicesdk.media.QualityCheckEngine
+import net.idrnd.voicesdk.media.QualityCheckScenario
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.UUID
@@ -24,7 +26,14 @@ class TiEnrollmentRecorder(
     private val sampleRate: Int,
     livenessEngine: LivenessEngine,
     var eventListener: TiEnrollmentEventListener? = null,
+    qualityCheckEngine: QualityCheckEngine
 ) : AutoCloseable {
+
+    // We use recommended IDVoice SDK thresholds as base + custom values for TI enrollment use case
+    private val qualityCheckMetricsThresholds = qualityCheckEngine.getRecommendedThresholds(QualityCheckScenario.VERIFY_TI_ENROLLMENT).apply {
+        minimumSpeechLengthMs = MIN_SPEECH_LENGTH_FOR_CHUNKS_IN_MS
+        minimumSpeechRelativeLength = MIN_RELATIVE_SPEECH_LENGTH_FOR_CHUNKS_IN_MS
+    }
 
     private var outputStream = ByteArrayOutputStream()
     private var outputSpeechLength = 0f
@@ -33,12 +42,12 @@ class TiEnrollmentRecorder(
         sampleRate,
         // We use values from IDVoice & IDLive Voice best practices guideline
         SpeechRecorderParams(
-            MIN_SPEECH_LENGTH_FOR_CHUNKS_IN_MS,
-            MIN_SNR_IN_DB,
+            qualityCheckMetricsThresholds,
             CheckLivenessType.DoesntCheckLiveness,
             DecisionToStopRecording.AsSoonAsPossible,
         ),
         GlobalPrefs.livenessThreshold,
+        qualityCheckEngine = qualityCheckEngine
     )
     private val cacheDir = context.cacheDir
     private val defLivenessEngine = GlobalScope.async {
@@ -80,7 +89,7 @@ class TiEnrollmentRecorder(
                 }
 
                 outputStream.write(audioFile.readBytes())
-                outputSpeechLength += speechParams.speechLengthInMs
+                outputSpeechLength += speechParams.qualityCheckEngineResult.speechLengthMs
                 val progress = outputSpeechLength / MIN_SPEECH_LENGTH_FOR_ENROLLMENT_IN_MS
                 eventListener?.onProgress(progress)
 
@@ -149,8 +158,9 @@ class TiEnrollmentRecorder(
 
     companion object {
         private const val MIN_SPEECH_LENGTH_FOR_ENROLLMENT_IN_MS = 10_000f
-        private const val MIN_SPEECH_LENGTH_FOR_CHUNKS_IN_MS = 3000f
-        private const val MIN_SNR_IN_DB = 10f
         private const val LIVENESS_THRESHOLD = 0.5f
+        private const val MIN_SPEECH_LENGTH_FOR_CHUNKS_IN_MS = 3000f
+        private const val MIN_RELATIVE_SPEECH_LENGTH_FOR_CHUNKS_IN_MS = 0f // Set to 0 as we ignore this check for TI enrollment.
+
     }
 }

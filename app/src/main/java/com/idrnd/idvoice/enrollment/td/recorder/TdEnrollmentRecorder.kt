@@ -11,6 +11,8 @@ import com.idrnd.idvoice.utils.speech.recorders.SpeechRecorder
 import com.idrnd.idvoice.utils.speech.recorders.SpeechRecorderListener
 import com.idrnd.idvoice.utils.speech.recorders.SpeechRecorderParams
 import net.idrnd.voicesdk.liveness.LivenessEngine
+import net.idrnd.voicesdk.media.QualityCheckEngine
+import net.idrnd.voicesdk.media.QualityCheckScenario
 import java.io.File
 import java.util.UUID
 
@@ -19,7 +21,11 @@ class TdEnrollmentRecorder(
     sampleRate: Int,
     livenessEngine: LivenessEngine,
     var eventListener: TdEnrollmentEventListener? = null,
+    qualityCheckEngine: QualityCheckEngine
 ) : AutoCloseable {
+
+    // We use recommended IDVoice SDK thresholds for TD enrollment.
+    private val qualityCheckMetricsThresholds = qualityCheckEngine.getRecommendedThresholds(QualityCheckScenario.VERIFY_TD_ENROLLMENT)
 
     private var outputFiles = mutableListOf<File>()
     private val speechRecorder = SpeechRecorder(
@@ -27,12 +33,12 @@ class TdEnrollmentRecorder(
         sampleRate,
         // We use values from IDVoice & IDLive Voice best practices guideline
         SpeechRecorderParams(
-            MIN_SPEECH_LENGTH_FOR_TD_ENROLLMENT_IN_MS,
-            MIN_SNR_FOR_TD_ENROLLMENT_IN_DB,
+            qualityCheckMetricsThresholds,
             CheckLivenessType.CheckLiveness,
             DecisionToStopRecording.WaitingForEndSpeech,
         ),
         GlobalPrefs.livenessThreshold,
+        qualityCheckEngine = qualityCheckEngine
     )
     private val cacheDir = context.cacheDir
 
@@ -125,8 +131,6 @@ class TdEnrollmentRecorder(
     }
 
     companion object {
-        private const val MIN_SPEECH_LENGTH_FOR_TD_ENROLLMENT_IN_MS = 700f
-        private const val MIN_SNR_FOR_TD_ENROLLMENT_IN_DB = 8f
         private const val NUMBER_PHRASES_FOR_ENROLLMENT = 3
     }
 }
