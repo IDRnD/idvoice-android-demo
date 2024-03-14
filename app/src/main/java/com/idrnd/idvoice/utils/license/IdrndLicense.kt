@@ -1,13 +1,13 @@
 package com.idrnd.idvoice.utils.license
 
 import android.util.Log
-import net.idrnd.voicesdk.android.extra.MobileLicense
-import net.idrnd.voicesdk.common.VoiceSdkEngineException
-import net.idrnd.voicesdk.core.BuildInfo
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import net.idrnd.voicesdk.android.extra.MobileLicense
+import net.idrnd.voicesdk.common.VoiceSdkEngineException
+import net.idrnd.voicesdk.core.Settings
 
 /**
  * Information about a license of ID R&D product.
@@ -48,7 +48,10 @@ class IdrndLicense(license: String) {
             return LicenseStatus.Invalid
         }
 
-        val stringDate = BuildInfo.get().licenseExpirationDate
+        val stringDate = Settings.getLicenseInfo().firstOrNull {
+            it.feature.name == "CORE"
+        }?.expirationDate ?: ""
+
         val optionalExpirationDate = try {
             dateFormat.parse(stringDate)
         } catch (e: ParseException) {

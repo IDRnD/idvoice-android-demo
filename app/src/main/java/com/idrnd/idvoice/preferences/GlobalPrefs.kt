@@ -40,7 +40,12 @@ object GlobalPrefs {
      * Type of biometrics analysis.
      */
     var biometricsType: BiometricsType
-        get() = BiometricsType.values()[preferencesManager.getInt(BIOMETRICS_TYPE, TextDependent.ordinal)]
+        get() = BiometricsType.values()[
+            preferencesManager.getInt(
+                BIOMETRICS_TYPE,
+                TextDependent.ordinal
+            )
+        ]
         set(biometricsType) {
             preferencesManager.edit().putInt(BIOMETRICS_TYPE, biometricsType.ordinal).commit()
         }
@@ -57,8 +62,14 @@ object GlobalPrefs {
         }
         set(value) {
             when (biometricsType) {
-                TextDependent -> preferencesManager.edit().putString(TD_TEMPLATE_FILE, value).apply()
-                TextIndependent -> preferencesManager.edit().putString(TI_TEMPLATE_FILE, value).apply()
+                TextDependent -> preferencesManager.edit().putString(
+                    TD_TEMPLATE_FILE,
+                    value
+                ).apply()
+                TextIndependent -> preferencesManager.edit().putString(
+                    TI_TEMPLATE_FILE,
+                    value
+                ).apply()
             }
         }
 
@@ -82,11 +93,6 @@ object GlobalPrefs {
      * Sample rate for audio recording.
      */
     val sampleRate = 48_000
-
-    /**
-     * Min speech length for TI enrollment in ms.
-     */
-    val minSpeechLengthForTiEnrollmentInMs = 10_000
 
     // Preferences keys
     private const val VERIFY_THRESHOLD = "VERIFY_THRESHOLD"

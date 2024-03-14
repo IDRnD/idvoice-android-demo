@@ -21,7 +21,7 @@ class PhraseEnrollmentView : ConstraintLayout {
     private val view = LayoutInflater.from(context).inflate(
         R.layout.phrase_enrollment_view,
         this,
-        true,
+        true
     )
 
     private val recordAndProcessPhraseView: RecordAndProcessPhraseView by lazy {
@@ -61,24 +61,36 @@ class PhraseEnrollmentView : ConstraintLayout {
         }
 
     var lifecycle
-        set(value) { recordAndProcessPhraseView.lifecycle = value }
+        set(value) {
+            recordAndProcessPhraseView.lifecycle = value
+        }
         get() = recordAndProcessPhraseView.lifecycle
 
     var messageAboutProcess
-        set(value) { recordAndProcessPhraseView.messageAboutProcess = value }
+        set(value) {
+            recordAndProcessPhraseView.messageAboutProcess = value
+        }
         get() = recordAndProcessPhraseView.messageAboutProcess
 
     var messageAboutPhrase
-        set(value) { recordAndProcessPhraseView.messageAboutPhrase = value }
+        set(value) {
+            recordAndProcessPhraseView.messageAboutPhrase = value
+        }
         get() = recordAndProcessPhraseView.messageAboutPhrase
 
     var phraseForPronouncing
-        set(value) { recordAndProcessPhraseView.phraseForPronouncing = value }
+        set(value) {
+            recordAndProcessPhraseView.phraseForPronouncing = value
+        }
         get() = recordAndProcessPhraseView.phraseForPronouncing
 
     constructor(context: Context) : this(context, null)
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
-    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
+    constructor(
+        context: Context,
+        attrs: AttributeSet?,
+        defStyleAttr: Int
+    ) : super(context, attrs, defStyleAttr) {
 
         context.withStyledAttributes(attrs, R.styleable.PhraseEnrollmentView, defStyleAttr) {
 
@@ -88,7 +100,9 @@ class PhraseEnrollmentView : ConstraintLayout {
             messageAboutPhrase = getString(R.styleable.PhraseEnrollmentView_message_about_phrase)
                 ?: DEFAULT_MESSAGE_ABOUT_PHRASE
 
-            phraseForPronouncing = getString(R.styleable.PhraseEnrollmentView_phrase_for_pronouncing)
+            phraseForPronouncing = getString(
+                R.styleable.PhraseEnrollmentView_phrase_for_pronouncing
+            )
                 ?: DEFAULT_PHRASE_FOR_PRONOUNCING
 
             // Call is here because method has specific logic to set background of inner views and must to call after
@@ -103,7 +117,11 @@ class PhraseEnrollmentView : ConstraintLayout {
         try {
             recordAndProcessPhraseView.background = background
         } catch (e: NullPointerException) {
-            Log.d(TAG, "Try to set background before finish of view inflating. This is expected behaviour.", e)
+            Log.d(
+                TAG,
+                "Try to set background before finish of view inflating. This is expected behaviour.",
+                e
+            )
         }
     }
 
@@ -130,6 +148,6 @@ class PhraseEnrollmentView : ConstraintLayout {
         Record,
         LivenessChecking,
         Process,
-        ProcessIsFinished,
+        ProcessIsFinished
     }
 }

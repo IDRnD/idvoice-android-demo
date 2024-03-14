@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ProgressBar
+import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -38,6 +39,11 @@ class VerifierFragment : Fragment(R.layout.verifier_fragment) {
         viewModel.isSpeechRecorded.observe(viewLifecycleOwner) { isSpeechRecorded ->
             isSpeechRecorded ?: return@observe
             recordAndProcessPhraseView.visualize()
+        }
+
+        viewModel.messageId.observe(viewLifecycleOwner) { message ->
+            message ?: return@observe
+            Toast.makeText(requireActivity().applicationContext, message, Toast.LENGTH_LONG).show()
         }
 
         viewModel.progress.observe(viewLifecycleOwner) { progress ->

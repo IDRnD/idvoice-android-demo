@@ -36,6 +36,7 @@ class EnrollerFragment : Fragment(R.layout.ti_enroller_fragment) {
         // Set listeners/observers
         viewModel.messageId.observe(viewLifecycleOwner) { message ->
             message ?: return@observe
+
             Toast.makeText(requireActivity().applicationContext, message, LENGTH_LONG).show()
         }
 
@@ -74,16 +75,12 @@ class EnrollerFragment : Fragment(R.layout.ti_enroller_fragment) {
 
     override fun onStart() {
         super.onStart()
-        if (viewModel.audioRecordIsPaused) {
-            viewModel.resumeRecord()
-        } else {
-            viewModel.startRecord()
-        }
+        viewModel.startRecord()
     }
 
     override fun onStop() {
         super.onStop()
-        viewModel.pauseRecord()
+        viewModel.stopRecord()
     }
 
     companion object {

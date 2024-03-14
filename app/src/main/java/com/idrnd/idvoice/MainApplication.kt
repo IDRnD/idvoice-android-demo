@@ -6,6 +6,7 @@ import com.idrnd.idvoice.preferences.GlobalPrefs
 import com.idrnd.idvoice.utils.TemplateFileCreator
 import com.idrnd.idvoice.utils.license.IdrndLicense
 import com.idrnd.idvoice.utils.license.LicenseStatus
+import java.io.File
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -13,9 +14,9 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import net.idrnd.voicesdk.android.media.AssetsExtractor
 import net.idrnd.voicesdk.liveness.LivenessEngine
+import net.idrnd.voicesdk.media.QualityCheckEngine
 import net.idrnd.voicesdk.verify.VoiceTemplateFactory
 import net.idrnd.voicesdk.verify.VoiceTemplateMatcher
-import java.io.File
 
 class MainApplication : Application() {
 
@@ -39,6 +40,12 @@ class MainApplication : Application() {
     }
 
     private lateinit var deferredVoiceTemplateMatcher: Deferred<VoiceTemplateMatcher>
+
+    private lateinit var deferredQualityCheckEngine: Deferred<QualityCheckEngine>
+
+    val qualityCheckEngine: QualityCheckEngine by lazy {
+        runBlocking { deferredQualityCheckEngine.await() }
+    }
 
     val voiceTemplateMatcher: VoiceTemplateMatcher by lazy {
         runBlocking { deferredVoiceTemplateMatcher.await() }
@@ -73,7 +80,10 @@ class MainApplication : Application() {
         val initDataFolder = AssetsExtractor(this).extractAssets()
 
         // Make init data for TD and TI biometrics modes
-        val voiceInitData = File(initDataFolder, AssetsExtractor.VERIFY_INIT_DATA_MIC_V1_SUBPATH).absolutePath
+        val voiceInitData = File(
+            initDataFolder,
+            AssetsExtractor.VERIFY_INIT_DATA_MIC_V1_SUBPATH
+        ).absolutePath
 
         // Init verify engines
         deferredVoiceTemplateFactory = GlobalScope.async(Dispatchers.Default) {
@@ -84,9 +94,20 @@ class MainApplication : Application() {
             VoiceTemplateMatcher(voiceInitData)
         }
 
+        deferredQualityCheckEngine = GlobalScope.async(Dispatchers.Default) {
+            QualityCheckEngine(
+                File(
+                    initDataFolder,
+                    AssetsExtractor.QUALITY_CHECK_WITH_MULT_SPEAKERS_DETECTOR_INIT_DATA_SUBPATH
+                ).absolutePath
+            )
+        }
+
         // Init a liveness engine
         deferredLivenessEngine = GlobalScope.async(Dispatchers.Default) {
-            LivenessEngine(File(initDataFolder, AssetsExtractor.LIVENESS_INIT_DATA_SUBPATH).absolutePath)
+            LivenessEngine(
+                File(initDataFolder, AssetsExtractor.LIVENESS_INIT_DATA_SUBPATH).absolutePath
+            )
         }
     }
 
@@ -97,5 +118,6 @@ class MainApplication : Application() {
         livenessEngine.close()
         voiceTemplateFactory.close()
         voiceTemplateMatcher.close()
+        qualityCheckEngine.close()
     }
 }

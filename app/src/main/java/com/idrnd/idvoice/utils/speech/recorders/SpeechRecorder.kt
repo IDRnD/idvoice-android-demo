@@ -1,273 +1,260 @@
 package com.idrnd.idvoice.utils.speech.recorders
 
 import android.content.Context
-import com.idrnd.idvoice.utils.audioRecorder.FileAudioRecorder
+import android.os.Handler
+import android.os.Looper
 import com.idrnd.idvoice.utils.audioRecorder.MicAudioRecorder
-import com.idrnd.idvoice.utils.extensions.readInChunksWhile
-import com.idrnd.idvoice.utils.speech.CheckLivenessType
-import com.idrnd.idvoice.utils.speech.DecisionToStopRecording
-import com.idrnd.idvoice.utils.speech.collector.SpeechCollector
-import com.idrnd.idvoice.utils.speech.params.LivenessCheckStatus
-import com.idrnd.idvoice.utils.speech.params.SpeechParams
-import com.idrnd.idvoice.utils.speech.params.SpeechQualityStatus
-import kotlinx.coroutines.runBlocking
-import net.idrnd.voicesdk.android.media.AssetsExtractor
-import net.idrnd.voicesdk.liveness.LivenessEngine
-import net.idrnd.voicesdk.liveness.LivenessResult
-import net.idrnd.voicesdk.media.SNRComputer
-import net.idrnd.voicesdk.media.SpeechEndpointDetector
-import net.idrnd.voicesdk.media.SpeechSummaryEngine
+import java.io.ByteArrayOutputStream
 import java.io.File
-import java.util.concurrent.CountDownLatch
+import java.io.IOException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import java.util.concurrent.Future
+import net.idrnd.voicesdk.android.media.AssetsExtractor
+import net.idrnd.voicesdk.media.SpeechSummaryEngine
 
 /**
- * File audio recorder with speech counter, liveness checker and speech endpoint detector.
+ * Records speech and accumulates speech bytes in speechChunkDeque. The speech bytes chunk is
+ * send to the listener when speech end is detected.
+ *
+ * Keeps speechSummaryStream updated once speech start is detected and sends it to listener until
+ * speech end is detected.
+ * To do so it detects when speech starts and ends.
+ * After speech starts, when it detects speech ended it pauses itself. You need to resume it to
+ * continue recording.
  */
 class SpeechRecorder(
     context: Context,
-    sampleRate: Int,
-    val speechRecorderParams: SpeechRecorderParams,
-    private val livenessThreshold: Float = LIVENESS_THRESHOLD,
     var speechRecorderListener: SpeechRecorderListener? = null,
-) : AutoCloseable {
-
-    private val audioRecorder: FileAudioRecorder
-
-    private var pauseLatch = CountDownLatch(0)
-
-    val outputFile: File?
-        get() = audioRecorder.outputFile
-
-    val sampleRate: Int
-        get() = audioRecorder.sampleRate
-
-    val bufferSizeForRecord: Int
-        get() = audioRecorder.bufferSize
+    sampleRate: Int
+) {
+    /**
+     * Microphone recorder.
+     */
+    private val micAudioRecorder: MicAudioRecorder by lazy { MicAudioRecorder(sampleRate) }
 
     /**
-     * Returns true if audio recorder is paused and false otherwise.
+     * SpeechSummaryEngine to allow us get an instance of SpeechSummaryStream.
      */
-    val isPaused: Boolean
-        get() = audioRecorder.isPaused
-
-    /**
-     * Returns true if audio recorder is stopped and false otherwise.
-     */
-    val isStopped: Boolean
-        get() = audioRecorder.isStopped
-
-    private lateinit var futureAssetsDir: Future<File>
-    private val assetsDir by lazy { runBlocking { futureAssetsDir.get() } }
-    private val executor: ExecutorService
-    private var isExternalLivenessEngine = false
-
-    private var livenessEngine: LivenessEngine? = null
-    private lateinit var speechSummaryEngine: SpeechSummaryEngine
-    private var speechEndpointDetector: SpeechEndpointDetector? = null
-    private lateinit var speechCollector: SpeechCollector
-    private lateinit var snrComputer: SNRComputer
-    private var lastProgress = -1f
-
-    var isPreparing = false
-        private set
-
-    var isPrepared = false
-        private set
-
-    init {
-        audioRecorder = FileAudioRecorder(MicAudioRecorder(sampleRate))
-        executor = Executors.newSingleThreadExecutor()
-        futureAssetsDir = executor.submit<File> { AssetsExtractor(context).extractAssets() }
-    }
-
-    /**
-     * Prepare recorder. Should be called as soon as possible.
-     * If it has not been called, then it will be called in start() function.
-     */
-    fun prepare() {
-        if (isPreparing || isPrepared) return
-
-        isPreparing = true
-        isExternalLivenessEngine = false
-        executor.submit {
-            if (speechRecorderParams.checkLivenessType == CheckLivenessType.CheckLiveness) {
-                livenessEngine =
-                    LivenessEngine(File(assetsDir, AssetsExtractor.LIVENESS_INIT_DATA_SUBPATH).absolutePath)
-            }
-
-            prepareWithoutLivenessEngine()
-
-            isPrepared = true
-            isPreparing = false
-        }
-    }
-
-    /**
-     * Prepare recorder. Should be called as soon as possible.
-     * If it has not been called, then it will be called in start() function.
-     *
-     * @param livenessEngine Liveness engine can be passed to reduce preparation time.
-     */
-    fun prepare(livenessEngine: LivenessEngine) {
-        if (isPreparing || isPrepared) return
-
-        isPreparing = true
-        isExternalLivenessEngine = true
-        this.livenessEngine = livenessEngine
-        executor.submit {
-            prepareWithoutLivenessEngine()
-            isPrepared = true
-            isPreparing = false
-        }
-    }
-
-    private fun prepareWithoutLivenessEngine() {
-        speechSummaryEngine =
-            SpeechSummaryEngine(File(assetsDir, AssetsExtractor.SPEECH_SUMMARY_INIT_DATA_SUBPATH).absolutePath)
-
-        if (speechRecorderParams.decisionToStopRecording == DecisionToStopRecording.WaitingForEndSpeech) {
-            // We use configuration with minSpeechLengthMs = 0 because the speech we calculated with SpeechSummaryStream
-            // and we need SpeechEndpointDetector only for detection of end speech.
-            speechEndpointDetector = SpeechEndpointDetector(0, MAX_SILENCE_LENGTH_MS, sampleRate)
-        }
-
-        speechCollector = SpeechCollector(
-            speechSummaryEngine.createStream(sampleRate),
-            speechRecorderParams.minSpeechLengthInMs,
+    private val speechSummaryEngine =
+        SpeechSummaryEngine(
+            File(
+                AssetsExtractor(context).extractAssets(),
+                AssetsExtractor.SPEECH_SUMMARY_INIT_DATA_SUBPATH
+            ).absolutePath
         )
 
-        snrComputer = SNRComputer(File(assetsDir, AssetsExtractor.SNR_COMPUTER_INIT_DATA_SUBPATH).absolutePath)
-    }
+    /**
+     * SpeechSummaryStream to keep speech information updated.
+     */
+    private val speechSummaryStream = speechSummaryEngine.createStream(micAudioRecorder.sampleRate)
+
+    /**
+     * Container for bytes that contain speech.
+     **/
+    private val speechChunkInputStream = ByteArrayOutputStream()
+
+    /**
+     * Gets speech summary updated information.
+     */
+    private val totalSpeechSummary
+        get() = speechSummaryStream.totalSpeechSummary
+
+    /**
+     * Gets updated total speech information.
+     */
+    private val totalSpeechInfo
+        get() = speechSummaryStream.totalSpeechInfo
+
+    /**
+     * To know whether we must continue looking for speech beginning or not.
+     */
+    private var shouldDetectSpeechBeginning = true
+
+    /**
+     *  Executor service where to process the audio.
+     */
+    private var executor: ExecutorService = Executors.newSingleThreadExecutor()
+
+    /**
+     *  Handler to post listener calls to UI thread.
+     */
+    private val handler: Handler = Handler(Looper.getMainLooper())
+
+    /**
+     * The minimum speech length recorded to start detecting end of speech.
+     */
+    var minimumSpeechLengthToDetectSpeechEnd = DEFAULT_MIN_SPEECH_LENGTH_TO_DETECT_SPEECH_END
+
+    /**
+     * The maximum silence length recorded to detect end of speech.
+     */
+    var maximumSilenceLengthToDetectSpeechEnd = DEFAULT_SILENCE_LENGTH_TO_DETECT_SPEECH_END
+
+    /**
+     * Tells if speech end is detected.
+     */
+    private val isSpeechEnded: Boolean
+        @Synchronized
+        get() {
+            val speechSummary = totalSpeechSummary
+            if (totalSpeechInfo.speechLengthMs < minimumSpeechLengthToDetectSpeechEnd) {
+                return false
+            }
+
+            var silenceLengthMs = 0F
+            for (speechEvent in speechSummary.speechEvents.reversedArray()) {
+                if (speechEvent.isVoice) {
+                    break
+                }
+                silenceLengthMs += speechEvent.audioInterval.endTime - speechEvent.audioInterval.startTime
+            }
+            return silenceLengthMs >= maximumSilenceLengthToDetectSpeechEnd
+        }
+
+    /**
+     * Tells whether recording is stopped or not.
+     */
+    val isStopped: Boolean
+        get() = micAudioRecorder.isStopped()
+
+    /**
+     * Tells whether recording is paused or not.
+     */
+    val isPaused: Boolean
+        get() = micAudioRecorder.isPaused
+
+    /**
+     * Gets the sample rate.
+     */
+    val sampleRate
+        get() = micAudioRecorder.sampleRate
+
+    /**
+     * Gets the recording encoding.
+     */
+    val encoding
+        get() = micAudioRecorder.encoding
 
     /**
      * Start record.
-     *
-     * @param outputFile Speech will be recorded tn this file.
+     * @exception IllegalStateException  can't start audio recording cause an unknown reason.
      */
-    fun startRecord(outputFile: File) {
-        if (!isPreparing && !isPrepared) {
-            prepare()
+    @Synchronized
+    @Throws(IllegalStateException::class, NoSuchElementException::class)
+    fun startRecord() {
+        // Stop a record.
+        if (!isStopped) {
+            stopRecord()
         }
+        shouldDetectSpeechBeginning = true
 
-        // Stop record if that has been start
-        stopRecord()
+        // Start audio recording.
+        micAudioRecorder.startAudioRecording()
 
-        audioRecorder.startRecord(outputFile)
-
+        if (executor.isTerminated || executor.isShutdown) executor = Executors.newSingleThreadExecutor()
         executor.submit {
-            val unpreparedChunkSize = MicAudioRecorder.getAudioSize(MIN_AUDIO_LENGTH_FOR_ANALYSIS_IN_MS, sampleRate)
+            val byteArrayStreamToDetectSpeechBeginning = ByteArrayOutputStream()
 
-            // VoiceSdk engine can process only even byte arrays
-            val chunkSize = if (unpreparedChunkSize % 2 != 0) unpreparedChunkSize + 1 else unpreparedChunkSize
+            while (!micAudioRecorder.isStopped()) {
+                if (!micAudioRecorder.hasNext()) {
+                    continue
+                }
 
-            audioRecorder.outputFile!!.inputStream().use { stream ->
-                stream.readInChunksWhile(chunkSize) { !audioRecorder.isStopped }.forEach { chunk ->
-                    // This is implementation pause functionality.
-                    // To wait until an user calls resume() method if the pauseLatch count more then 0.
-                    pauseLatch.await()
+                val audioBytes = micAudioRecorder.next()
 
-                    speechCollector.addSamples(chunk)
+                if (shouldDetectSpeechBeginning) {
+                    byteArrayStreamToDetectSpeechBeginning.write(audioBytes)
 
-                    val progress = speechCollector.getSpeechLengthInMs() / speechRecorderParams.minSpeechLengthInMs
-                    if (progress != lastProgress) {
-                        speechRecorderListener?.onProgress(progress)
-                        lastProgress = progress
-                    }
+                    // If 0.5 seconds of audio collected.
+                    if (byteArrayStreamToDetectSpeechBeginning.size() >= sampleRate / 2) {
+                        val bytesToAnalyzeSpeechBeginning = byteArrayStreamToDetectSpeechBeginning.toByteArray()
 
-                    if (!speechCollector.isThereSpeechEnough()) return@forEach
+                        val speechInfo = speechSummaryEngine.getSpeechSummary(
+                            bytesToAnalyzeSpeechBeginning,
+                            sampleRate
+                        ).speechInfo
 
-                    if (speechRecorderParams.decisionToStopRecording == DecisionToStopRecording.WaitingForEndSpeech) {
-                        speechEndpointDetector!!.addSamples(chunk)
-                        if (!speechEndpointDetector!!.isSpeechEnded) return@forEach
-                        speechEndpointDetector!!.reset()
-                    }
+                        val hasSpeech = speechInfo.speechLengthMs > 0
 
-                    // To prevent record more speech than necessary
-                    pauseRecord()
-
-                    val speech = speechCollector.getSpeech()
-                    val speechLengthInMs = speechCollector.getSpeechLengthInMs()
-                    speechCollector.reset()
-                    val snr = snrComputer.compute(speech, sampleRate)
-                    if (snr < speechRecorderParams.minSnrInDb) {
-                        stopRecord()
-                        speechRecorderListener?.onComplete(
-                            outputFile,
-                            SpeechParams(
-                                speechLengthInMs,
-                                snr,
-                                SpeechQualityStatus.TooNoisy,
-                                LivenessCheckStatus.Unknown,
-                            ),
-                        )
-                        return@submit
-                    }
-
-                    var livenessCheckStatus = LivenessCheckStatus.Unknown
-                    var livenessResult: LivenessResult? = null
-                    if (speechRecorderParams.checkLivenessType == CheckLivenessType.CheckLiveness) {
-                        speechRecorderListener?.onLivenessCheckStarted()
-                        livenessResult = livenessEngine!!.checkLiveness(speech, sampleRate)
-                        livenessCheckStatus = if (livenessResult.value.probability >= livenessThreshold) {
-                            LivenessCheckStatus.LiveDetected
+                        if (hasSpeech) {
+                            shouldDetectSpeechBeginning = false
+                            // Collect those initial speech bytes in speech deque.
+                            speechChunkInputStream.write(bytesToAnalyzeSpeechBeginning)
+                            // Collect the same bytes on speechSummaryStream to keep it updated.
+                            speechSummaryStream.addSamples(bytesToAnalyzeSpeechBeginning)
+                            // Send totalSpeechSummary to listener.
+                            val totalSpeechSummaryToPost = totalSpeechSummary
+                            handler.post { speechRecorderListener?.onSpeechSummaryUpdate(totalSpeechSummaryToPost) }
+                            // Clear bytes to analyze speech beginning.
+                            byteArrayStreamToDetectSpeechBeginning.reset()
                         } else {
-                            LivenessCheckStatus.SpoofDetected
+                            // Just clear it as we need to collect new 0.5 seconds of fresh audio bytes for
+                            // analysis of speech beginning.
+                            byteArrayStreamToDetectSpeechBeginning.reset()
                         }
                     }
+                } else { // speech beginning is already detected.
 
-                    stopRecord()
-                    speechRecorderListener?.onComplete(
-                        outputFile,
-                        SpeechParams(
-                            speechLengthInMs,
-                            snr,
-                            SpeechQualityStatus.Ok,
-                            livenessCheckStatus,
-                            livenessResult,
-                        ),
-                    )
-                    return@submit
+                    // If speech end is detected then pause recording, send speech chunk to listener
+                    // and clear all.
+                    if (isSpeechEnded) {
+                        pauseRecord()
+                        val speechBytesToPost = speechChunkInputStream.toByteArray()
+                        val speechSummaryToPost = speechSummaryStream.totalSpeechSummary
+                        handler.post {
+                            speechRecorderListener?.onSpeechChunk(
+                                speechBytesToPost,
+                                speechSummaryToPost
+                            )
+                        }
+                        speechChunkInputStream.reset()
+                        speechSummaryStream.reset()
+                        shouldDetectSpeechBeginning = true
+                    } else {
+                        // If speech is not yet ended we continue adding bytes to speech chunk,
+                        // speech endpoint detector and to speech summary stream. Also we continue
+                        // updating listener with totalSpeechSummary.
+                        speechChunkInputStream.write(audioBytes)
+                        val previousSpeechLength = totalSpeechSummary.speechInfo.speechLengthMs
+                        speechSummaryStream.addSamples(audioBytes)
+                        if (totalSpeechSummary.speechInfo.speechLengthMs > previousSpeechLength) {
+                            val totalSpeechSummaryToPost = totalSpeechSummary
+                            handler.post { speechRecorderListener?.onSpeechSummaryUpdate(totalSpeechSummaryToPost) }
+                        }
+                    }
                 }
             }
         }
     }
 
-    fun pauseRecord() {
-        if (pauseLatch.count > 0) return
-        audioRecorder.pauseRecord()
-        pauseLatch = CountDownLatch(1)
-    }
-
-    fun resumeRecord() {
-        audioRecorder.resumeRecord()
-        pauseLatch.countDown()
-    }
-
+    /**
+     * Stop record.
+     *
+     * @exception IOException  if an I/O error occurs.
+     */
+    @Synchronized
     fun stopRecord() {
-        // Stop audio record
-        audioRecorder.stopRecord()
-        pauseLatch.countDown()
+        micAudioRecorder.stopAudioRecording()
+        speechChunkInputStream.reset()
+        executor.shutdown()
     }
 
-    override fun close() {
-        executor.shutdown()
-        // We don't have responsibility to close external resources.
-        if (!isExternalLivenessEngine) {
-            livenessEngine?.close()
-        }
-        speechSummaryEngine.close()
-        speechCollector.close()
-        snrComputer.close()
-        speechEndpointDetector?.close()
+    /**
+     * Pauses recording.
+     */
+    fun pauseRecord() {
+        micAudioRecorder.pauseAudioRecording()
+    }
+
+    /**
+     * Resume recording.
+     */
+    fun resumeRecord() {
+        micAudioRecorder.resumeAudioRecording()
     }
 
     companion object {
-        private val TAG = SpeechRecorder::class.simpleName
-        private const val MIN_AUDIO_LENGTH_FOR_ANALYSIS_IN_MS = 64
-        private const val LIVENESS_THRESHOLD = 0.5f
-        private const val MAX_SILENCE_LENGTH_MS = 350
+        const val DEFAULT_MIN_SPEECH_LENGTH_TO_DETECT_SPEECH_END = 700f
+        const val DEFAULT_SILENCE_LENGTH_TO_DETECT_SPEECH_END = 150f
     }
 }

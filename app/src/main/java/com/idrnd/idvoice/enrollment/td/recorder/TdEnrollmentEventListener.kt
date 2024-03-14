@@ -3,7 +3,6 @@ package com.idrnd.idvoice.enrollment.td.recorder
 import androidx.annotation.IntRange
 import com.idrnd.idvoice.utils.speech.params.LivenessCheckStatus
 import com.idrnd.idvoice.utils.speech.params.SpeechQualityStatus
-import java.io.File
 
 /**
  * Listener of events from TD enrollment recorder.
@@ -29,9 +28,9 @@ interface TdEnrollmentEventListener {
 
     /**
      * Called when a recorder has completed recording.
-     * @param audioFiles Files with recordings for voice template making.
+     * @param speechBytes Recordings for voice template making.
      */
-    fun onComplete(audioFiles: List<File>)
+    fun onComplete(speechBytesList: List<ByteArray>)
 
     /**
      * Called when a recorder has started a new record.

@@ -5,5 +5,5 @@ package com.idrnd.idvoice.preferences
  */
 enum class BiometricsType {
     TextDependent,
-    TextIndependent,
+    TextIndependent
 }

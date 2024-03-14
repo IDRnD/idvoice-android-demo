@@ -32,7 +32,7 @@ class UseCaseSelectorViewModel(context: Context) : ViewModel() {
         // Get enrollment titles
         templateExistenceToEnrollmentButtonTitle = mapOf(
             true to context.getString(R.string.update_enrollment),
-            false to context.getString(R.string.enroll),
+            false to context.getString(R.string.enroll)
         )
 
         // Init ui state by a saved biometrics type

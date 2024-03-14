@@ -1,119 +1,137 @@
 package com.idrnd.idvoice.enrollment.td.recorder
 
 import android.content.Context
-import com.idrnd.idvoice.preferences.GlobalPrefs
-import com.idrnd.idvoice.utils.speech.CheckLivenessType
-import com.idrnd.idvoice.utils.speech.DecisionToStopRecording
 import com.idrnd.idvoice.utils.speech.params.LivenessCheckStatus
-import com.idrnd.idvoice.utils.speech.params.SpeechParams
-import com.idrnd.idvoice.utils.speech.params.SpeechQualityStatus
+import com.idrnd.idvoice.utils.speech.recorders.LivenessStatusHelper
+import com.idrnd.idvoice.utils.speech.recorders.SpeechQualityHelper
 import com.idrnd.idvoice.utils.speech.recorders.SpeechRecorder
 import com.idrnd.idvoice.utils.speech.recorders.SpeechRecorderListener
-import com.idrnd.idvoice.utils.speech.recorders.SpeechRecorderParams
+import java.io.IOException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.launch
 import net.idrnd.voicesdk.liveness.LivenessEngine
-import java.io.File
-import java.util.UUID
+import net.idrnd.voicesdk.media.QualityCheckEngine
+import net.idrnd.voicesdk.media.QualityCheckShortDescription
+import net.idrnd.voicesdk.media.SpeechSummary
 
+/**
+ * Collects quality and liveness speech chunks up to 3, at that point completes the recording.
+ * Each chunk has to pass quality and liveness checks, else the chunk is not taken into account.
+ */
 class TdEnrollmentRecorder(
     context: Context,
-    sampleRate: Int,
-    livenessEngine: LivenessEngine,
+    val sampleRate: Int,
+    val livenessEngine: LivenessEngine,
     var eventListener: TdEnrollmentEventListener? = null,
+    val qualityCheckEngine: QualityCheckEngine
 ) : AutoCloseable {
 
-    private var outputFiles = mutableListOf<File>()
-    private val speechRecorder = SpeechRecorder(
-        context,
-        sampleRate,
-        // We use values from IDVoice & IDLive Voice best practices guideline
-        SpeechRecorderParams(
-            MIN_SPEECH_LENGTH_FOR_TD_ENROLLMENT_IN_MS,
-            MIN_SNR_FOR_TD_ENROLLMENT_IN_DB,
-            CheckLivenessType.CheckLiveness,
-            DecisionToStopRecording.WaitingForEndSpeech,
-        ),
-        GlobalPrefs.livenessThreshold,
-    )
-    private val cacheDir = context.cacheDir
+    /**
+     * We use recommended IDVoice SDK thresholds.
+     */
+    val qualityThresholds = SpeechQualityHelper.getTDEnrollmentThresholds(qualityCheckEngine)
 
-    val isPaused: Boolean
-        get() = speechRecorder.isPaused
+    /**
+     * Scope for recoding process.
+     */
+    private val scope = CoroutineScope(Dispatchers.Default)
 
-    val isRecording: Boolean
-        get() = !speechRecorder.isStopped && !speechRecorder.isPaused
+    /**
+     * Job for recording process.
+     */
+    private var recordJob: Job? = null
 
-    init {
-        speechRecorder.prepare(livenessEngine)
-    }
+    /**
+     * The speech recorder.
+     */
+    private val speechRecorder = SpeechRecorder(context = context, sampleRate = sampleRate)
+
+    /**
+     * Container for good speech chunks.
+     */
+    private var speechBytesList = mutableListOf<ByteArray>()
 
     /**
      * Start the enrollment recording.
-     * The prepared audio for voice template creating will be returned to the event listener.
+     * The prepared speech bytes for voice template will be returned through the event listener.
      */
     @Synchronized
     fun start() {
-        stop()
-
         speechRecorder.speechRecorderListener = object : SpeechRecorderListener {
+            override fun onSpeechChunk(speechBytes: ByteArray, speechSummary: SpeechSummary) {
+                recordJob = scope.launch {
+                    eventListener?.onLivenessCheckStarted()
 
-            override fun onLivenessCheckStarted() {
-                eventListener?.onLivenessCheckStarted()
+                    // Gets speech quality status.
+                    val qualityResults = qualityCheckEngine.checkQuality(speechBytes, sampleRate, qualityThresholds)
+                    val speechQualityStatus = SpeechQualityHelper.getSpeechQualityStatus(qualityResults)
+
+                    // Notify quality of speech status if it is not Ok and resumes recording.
+                    if (qualityResults.qualityCheckShortDescription != QualityCheckShortDescription.OK) {
+                        eventListener?.onSpeechQualityStatus(speechQualityStatus)
+                        eventListener?.onStartRecordIndex(speechBytesList.size)
+                        speechRecorder.resumeRecord()
+                        return@launch
+                    }
+
+                    // Checks speech liveness.
+                    val livenessCheckStatus =
+                        LivenessStatusHelper.checkLiveness(speechBytes, sampleRate, livenessEngine)
+
+                    // Notify speech liveness if it's spoof and resumes recording.
+                    if (livenessCheckStatus != LivenessCheckStatus.LiveDetected) {
+                        eventListener?.onLivenessCheckStatus(livenessCheckStatus)
+                        eventListener?.onStartRecordIndex(speechBytesList.size)
+                        speechRecorder.resumeRecord()
+                        return@launch
+                    }
+
+                    // At this point both, quality and liveness checks have passed.
+
+                    // Notify OK quality status.
+                    eventListener?.onSpeechQualityStatus(speechQualityStatus)
+
+                    // Add speech bytes chunk to passed speech bytes chunk list.
+                    speechBytesList.add(speechBytes)
+
+                    // Update recording index with the number of passed speech bytes chunks.
+                    eventListener?.onStartRecordIndex(speechBytesList.size)
+
+                    // If speech bytes chunk list size is not yet equal to the number of phrases needed for enrollment
+                    // then resume recording (to continue getting speech chunks).
+                    if (speechBytesList.size != NUMBER_PHRASES_FOR_ENROLLMENT) {
+                        speechRecorder.resumeRecord()
+                        return@launch
+                    }
+
+                    // At this point we have enough speech length so we can complete the process.
+                    eventListener?.onComplete(speechBytesList)
+                    stop()
+                }
             }
 
-            override fun onComplete(audioFile: File, speechParams: SpeechParams) {
-                eventListener?.onSpeechQualityStatus(speechParams.speechQualityStatus)
-
-                if (speechParams.speechQualityStatus != SpeechQualityStatus.Ok) {
-                    speechRecorder.startRecord(getNewCacheFile())
-                    return
-                }
-
-                eventListener?.onLivenessCheckStatus(speechParams.livenessCheckStatus)
-
-                if (speechParams.livenessCheckStatus != LivenessCheckStatus.LiveDetected) {
-                    speechRecorder.startRecord(getNewCacheFile())
-                    return
-                }
-
-                outputFiles.add(audioFile)
-
-                if (outputFiles.size != NUMBER_PHRASES_FOR_ENROLLMENT) {
-                    eventListener?.onStartRecordIndex(outputFiles.size)
-                    speechRecorder.startRecord(getNewCacheFile())
-                    return
-                }
-
-                eventListener?.onComplete(outputFiles)
-                stop()
-            }
-
-            override fun onProgress(progress: Float) {
+            override fun onSpeechSummaryUpdate(speechSummary: SpeechSummary) {
                 eventListener?.onSpeechPartRecorded()
             }
         }
-
-        eventListener?.onStartRecordIndex(outputFiles.size)
-        speechRecorder.startRecord(getNewCacheFile())
+        eventListener?.onStartRecordIndex(speechBytesList.size)
+        speechRecorder.startRecord()
     }
 
-    @Synchronized
-    fun pause() {
-        speechRecorder.pauseRecord()
-    }
-
-    @Synchronized
-    fun resume() {
-        speechRecorder.resumeRecord()
-    }
-
+    /**
+     * Stop record.
+     *
+     * @exception IOException  if an I/O error occurs.
+     */
     @Synchronized
     fun stop() {
-        speechRecorder.stopRecord()
-        outputFiles.clear()
-    }
-
-    private fun getNewCacheFile(): File {
-        return File(cacheDir, "${UUID.randomUUID()}.bin")
+        scope.launch {
+            speechRecorder.stopRecord()
+            recordJob?.cancelAndJoin()
+        }
     }
 
     /**
@@ -121,12 +139,10 @@ class TdEnrollmentRecorder(
      */
     override fun close() {
         stop()
-        speechRecorder.close()
+        eventListener = null
     }
 
     companion object {
-        private const val MIN_SPEECH_LENGTH_FOR_TD_ENROLLMENT_IN_MS = 700f
-        private const val MIN_SNR_FOR_TD_ENROLLMENT_IN_DB = 8f
         private const val NUMBER_PHRASES_FOR_ENROLLMENT = 3
     }
 }

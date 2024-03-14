@@ -1,23 +1,26 @@
 # Android IDVoice sample application
 
-**The application was tested with VoiceSDK 3.11.2.**
+**The application was tested with VoiceSDK 4.0.0.**
 
-This sample application is intended to demonstrate the VoiceSDK voice verification and anti-spoofing
+This sample application is intended to demonstrate the VoiceSDK voice verification and liveness
 capabilities:
 
 - It provides a simple text-dependent enrollment and voice verification scenario: user enrolls with
   three entries of their voice to create a strong voiceprint. Then they can use the created
   voiceprint for voice verification. By enrolling for the second time user overwrites their
-  voiceprint.
+  voiceprint. Liveness result tells whether the speech is genuine or not.
 
 - It provides simple text-independent enrollment and verification scenario: user enrolls with 10
   seconds of their speech to create a strong voiceprint. By enrolling for the second time user
-  overwrites their voiceprint.
+  overwrites their voiceprint. Liveness result tells whether the speech is genuine or not.
 
-- It provides text-independent continuous verification scenario without anti-spoofing check.
+The application also demonstrates the way to validate user audio input by performing quality checks
+(SNR level, speech length, relative speech length and multiple speakers detection).
 
-The application also demonstrates the way to validate user audio input by performing speech endpoint
-detection and estimating net speech length.
+- Enrollment process can't get completed if quality checks are not met.
+
+- Verification process can't get completed if quality checks are not met except for 
+  multiple speakers detection which is shown as a warning in liveness results if detected.
 
 **All source code contains commentary that should help developers.**
 

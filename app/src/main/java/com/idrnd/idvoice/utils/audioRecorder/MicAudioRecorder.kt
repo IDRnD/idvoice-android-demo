@@ -3,16 +3,26 @@ package com.idrnd.idvoice.utils.audioRecorder
 import android.content.ContentValues.TAG
 import android.media.AudioFormat
 import android.media.AudioRecord
-import android.media.AudioRecord.*
+import android.media.AudioRecord.ERROR
+import android.media.AudioRecord.ERROR_BAD_VALUE
+import android.media.AudioRecord.ERROR_DEAD_OBJECT
+import android.media.AudioRecord.ERROR_INVALID_OPERATION
+import android.media.AudioRecord.RECORDSTATE_RECORDING
+import android.media.AudioRecord.RECORDSTATE_STOPPED
+import android.media.AudioRecord.STATE_INITIALIZED
+import android.media.AudioRecord.STATE_UNINITIALIZED
+import android.media.AudioRecord.getMinBufferSize
 import android.media.MediaRecorder.AudioSource.UNPROCESSED
 import android.media.MediaRecorder.AudioSource.VOICE_RECOGNITION
 import android.os.Build
 import android.util.Log
-import kotlinx.coroutines.*
 import java.nio.ByteBuffer
 import java.util.concurrent.ConcurrentLinkedDeque
 import kotlin.concurrent.thread
 import kotlin.math.ceil
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 
 /**
  * Mic audio recorder.
@@ -24,7 +34,7 @@ class MicAudioRecorder
 constructor(
     val sampleRate: Int,
     // 32 ms is required minimum for most VoiceSDK operation
-    minAudioLengthInByteChunkInMs: Int = 32,
+    minAudioLengthInByteChunkInMs: Int = 32
 ) : Iterator<ByteArray> {
 
     val encoding
@@ -42,12 +52,15 @@ constructor(
         private set
 
     init {
-        minBufferSizeByAudioLength = getAudioSize(minAudioLengthInByteChunkInMs.toLong(), sampleRate)
+        minBufferSizeByAudioLength = getAudioSize(
+            minAudioLengthInByteChunkInMs.toLong(),
+            sampleRate
+        )
 
         bufferSize = getMinBufferSize(
             sampleRate,
             RECORDER_CHANNELS,
-            RECORDER_AUDIO_ENCODING,
+            RECORDER_AUDIO_ENCODING
         )
 
         // If min buffer size is greater than required by user than write a log about it but doesn't break work of
@@ -222,7 +235,7 @@ constructor(
                     .setChannelMask(RECORDER_CHANNELS)
                     .build()
 
-                val builder = Builder()
+                val builder = AudioRecord.Builder()
                     .setAudioSource(audioSource)
                     .setAudioFormat(format)
                     .setBufferSizeInBytes(bufferSize)
@@ -239,7 +252,7 @@ constructor(
                     sampleRate,
                     RECORDER_CHANNELS,
                     RECORDER_AUDIO_ENCODING,
-                    bufferSize,
+                    bufferSize
                 )
             }
         } catch (e: IllegalArgumentException) {

@@ -18,15 +18,17 @@ import com.idrnd.idvoice.utils.speech.params.SpeechQualityStatus
 import com.idrnd.idvoice.utils.views.PhraseEnrollmentView.State
 import com.idrnd.idvoice.utils.views.PhraseEnrollmentView.State.Process
 import com.idrnd.idvoice.utils.views.PhraseEnrollmentView.State.ProcessIsFinished
-import net.idrnd.voicesdk.liveness.LivenessEngine
-import net.idrnd.voicesdk.verify.VoiceTemplateFactory
 import java.io.File
+import net.idrnd.voicesdk.liveness.LivenessEngine
+import net.idrnd.voicesdk.media.QualityCheckEngine
+import net.idrnd.voicesdk.verify.VoiceTemplateFactory
 
 class PhraseEnrollerViewModel(
     context: Context,
     templateFactory: VoiceTemplateFactory,
     templateFileCreator: TemplateFileCreator,
     livenessEngine: LivenessEngine,
+    qualityCheckEngine: QualityCheckEngine
 ) : ViewModel() {
 
     val isSpeechRecorded = MutableLiveData<Unit>()
@@ -58,6 +60,18 @@ class PhraseEnrollerViewModel(
                             messageId.postValue(R.string.speech_is_too_noisy)
                         }
 
+                        SpeechQualityStatus.TooSmallSpeechTotalLength -> {
+                            messageId.postValue(R.string.total_speech_length_is_not_enough)
+                        }
+
+                        SpeechQualityStatus.TooSmallSpeechRelativeLength -> {
+                            messageId.postValue(R.string.relative_speech_length_is_not_enough)
+                        }
+
+                        SpeechQualityStatus.MultipleSpeakersDetected -> {
+                            messageId.postValue(R.string.multi_speaker_detected_try_again)
+                        }
+
                         SpeechQualityStatus.Ok -> {
                             messageId.postValue(R.string.please_continue_talking)
                         }
@@ -68,37 +82,40 @@ class PhraseEnrollerViewModel(
                     state.postValue(State.LivenessChecking)
                 }
 
-                override fun onComplete(audioFiles: List<File>) {
-                    // Set processing state
+                override fun onComplete(speechBytesList: List<ByteArray>) {
+                    // Set processing state.
                     state.postValue(Process)
 
                     // Set message for user as null so that it doesn't appear when a screen is rotated.
                     messageId.postValue(null)
 
-                    val templates = audioFiles.map {
-                        // Make template from records
-                        templateFactory.createVoiceTemplate(it.readBytes(), GlobalPrefs.sampleRate)
+                    val templates = speechBytesList.map {
+                        // Make template from records.
+                        templateFactory.createVoiceTemplate(it, GlobalPrefs.sampleRate)
                     }
 
+                    // Our complete voice template.
                     val mergedTemplate = templateFactory.mergeVoiceTemplates(templates.toTypedArray())
 
-                    // Save template in file system
-                    val templateFile = templateFileCreator.createTemplateFile(GlobalPrefs.templateFilename, true)
+                    // Save template in file system.
+                    val templateFile =
+                        templateFileCreator.createTemplateFile(GlobalPrefs.templateFilename, true)
                     mergedTemplate.saveToFile(templateFile.absolutePath)
 
-                    // Save template path in prefs
+                    // Save template path in prefs.
                     GlobalPrefs.templateFilepath = templateFile.absolutePath
 
-                    // Clear resources
+                    // Clear resources.
                     templates.forEach { it.close() }
                     mergedTemplate.close()
 
-                    // Signal UI that processing is finished
+                    // Signal UI that processing is finished.
                     state.postValue(ProcessIsFinished)
                 }
 
                 override fun onStartRecordIndex(index: Int) {
                     recordRecordingIndex.postValue(index)
+                    state.postValue(State.Record)
                 }
 
                 override fun onSpeechPartRecorded() {
@@ -112,18 +129,19 @@ class PhraseEnrollerViewModel(
                     state.postValue(State.Record)
                 }
             },
+            qualityCheckEngine
         )
 
-        // Init cache dir for output files
+        // Init cache dir for output files.
         cacheDir = context.cacheDir
 
-        // Send first phrase
+        // Send first phrase.
         phraseForPronouncing.postValue(GlobalPrefs.passwordPhrase)
     }
 
     fun startRecord() {
         if (state.value == Process || state.value == ProcessIsFinished) {
-            // All recording methods are ignored when it is processing
+            // All recording methods are ignored when it is processing.
             return
         }
 
@@ -133,13 +151,12 @@ class PhraseEnrollerViewModel(
 
     fun stopRecord() {
         if (state.value == Process || state.value == ProcessIsFinished) {
-            // All recording methods are ignored when it is processing
+            // All recording methods are ignored when it is processing.
             return
         }
 
         // Set message for user as null so that it doesn't appear when a screen is rotated.
         messageId.postValue(null)
-
         tdEnrollmentRecorder.stop()
     }
 
@@ -159,6 +176,7 @@ class PhraseEnrollerViewModel(
                     app.voiceTemplateFactory,
                     app.templateFileCreator,
                     app.livenessEngine,
+                    app.qualityCheckEngine
                 )
             }
         }

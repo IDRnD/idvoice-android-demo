@@ -41,7 +41,12 @@ class PhraseEnrollerFragment : Fragment(R.layout.phrase_enroller_fragmnet) {
         // Set listeners/observers
         viewModel.messageId.observe(viewLifecycleOwner) { messageId ->
             messageId ?: return@observe
-            Toast.makeText(requireActivity().applicationContext, getString(messageId), Toast.LENGTH_SHORT).show()
+
+            Toast.makeText(
+                requireActivity().applicationContext,
+                getString(messageId),
+                Toast.LENGTH_SHORT
+            ).show()
         }
 
         viewModel.needResetVisualization.observe(viewLifecycleOwner) { resetVisualization ->
