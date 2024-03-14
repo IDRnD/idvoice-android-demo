@@ -12,7 +12,8 @@
     <string name="total_speech_length_is_not_enough">Sorry, but the total recorded speech length is not enough for analysis</string>
     <string name="relative_speech_length_is_not_enough">Sorry, but the relative recorded speech length is not enough for analysis</string>
     <string name="speech_is_too_noisy">The audio record has too much background noise. Please record in a quieter location</string>
-    <string name="multi_speaker_detected">Multiple speakers detected. Please try again</string>
+    <string name="multi_speaker_detected_try_again">Multiple speakers detected. Please try again</string>
+    <string name="multi_speaker_detected">Multiple speakers detected.</string>
     <string name="speech_has_too_long_reverberation">The audio record has strong echo. Please record in an another location</string>
     <string name="please_pronounce_phrase">Please to pronounce a phrase</string>
     <string name="hint_about_recording">Please say the phrase below</string>

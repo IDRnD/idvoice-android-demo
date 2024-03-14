@@ -13,6 +13,7 @@ class BiometricsResultViewModel(
     context: Context,
     verifyProbability: Float,
     livenessProbability: Float,
+    val showMultipleSpeakersWarning: Boolean
 ) : ViewModel() {
 
     val verificationValueToColor: Pair<String, Int>
@@ -24,9 +25,10 @@ class BiometricsResultViewModel(
         val negativeColor = ContextCompat.getColor(context, R.color.mojo)
 
         // Init a verify value for view
-        val verifyProbability = (verifyProbability * 100).toInt()
-        val verifyColor = if (verifyProbability >= GlobalPrefs.verifyThreshold) positiveColor else negativeColor
-        verificationValueToColor = PERCENT_FORMAT.format(verifyProbability) to verifyColor
+        val probability = (verifyProbability * 100).toInt()
+        val verifyColor =
+            if (verifyProbability >= GlobalPrefs.verifyThreshold) positiveColor else negativeColor
+        verificationValueToColor = PERCENT_FORMAT.format(probability) to verifyColor
 
         // Init a liveness value for view
         livenessValueToColor = if (livenessProbability >= GlobalPrefs.livenessThreshold) {
@@ -40,6 +42,7 @@ class BiometricsResultViewModel(
     class BiometricsResultViewModelFactory(
         private val verifyProbability: Float,
         private val livenessProbability: Float,
+        private val showMultipleSpeakersWarning: Boolean
     ) : ViewModelProvider.Factory {
         @Throws(IllegalStateException::class)
         override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
@@ -47,9 +50,15 @@ class BiometricsResultViewModel(
                 throw IllegalStateException("Unknown class name ${modelClass.name}")
             }
 
-            val app = extras[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MainApplication
+            val app =
+                extras[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MainApplication
 
-            return BiometricsResultViewModel(app.applicationContext, verifyProbability, livenessProbability) as T
+            return BiometricsResultViewModel(
+                app.applicationContext,
+                verifyProbability,
+                livenessProbability,
+                showMultipleSpeakersWarning
+            ) as T
         }
     }
 

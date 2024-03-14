@@ -78,14 +78,18 @@ class UseCaseSelectorFragment : Fragment(R.layout.use_case_selector_fragment) {
                 viewModel.onBiometricsTypeTabClick(biometricAnalysisTab.position)
 
                 biometricAnalysisTypeTabs.isEnabled = true
-            },
+            }
         )
 
         enrollButton.setOnClickListener {
             enrollButton.isClickable = false
 
             // Check self permission and request it
-            if (ContextCompat.checkSelfPermission(requireContext(), RECORD_AUDIO) != PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(
+                    requireContext(),
+                    RECORD_AUDIO
+                ) != PERMISSION_GRANTED
+            ) {
                 enrollPermissionRequester.launch(RECORD_AUDIO)
                 enrollButton.isClickable = true
                 return@setOnClickListener
@@ -101,7 +105,11 @@ class UseCaseSelectorFragment : Fragment(R.layout.use_case_selector_fragment) {
             verifyButton.isClickable = false
 
             // Check self permission and request it
-            if (ContextCompat.checkSelfPermission(requireContext(), RECORD_AUDIO) != PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(
+                    requireContext(),
+                    RECORD_AUDIO
+                ) != PERMISSION_GRANTED
+            ) {
                 verifyPermissionRequester.launch(RECORD_AUDIO)
                 verifyButton.isClickable = true
                 return@setOnClickListener
@@ -119,7 +127,10 @@ class UseCaseSelectorFragment : Fragment(R.layout.use_case_selector_fragment) {
         // Set VoiceSDK license expiration date
         val stringExpirationDate =
             (requireActivity().application as MainApplication).voiceSdkLicense.stringExpirationDate
-        voiceSdkLicenseExpirationDate.text = getString(R.string.license_expires_at, stringExpirationDate)
+        voiceSdkLicenseExpirationDate.text = getString(
+            R.string.license_expires_at,
+            stringExpirationDate
+        )
 
         // Subscribe on view model
         viewModel.messageId.observe(viewLifecycleOwner) { messageId ->

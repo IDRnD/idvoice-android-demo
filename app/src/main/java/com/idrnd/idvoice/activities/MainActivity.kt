@@ -46,7 +46,9 @@ class MainActivity : AppCompatActivity() {
         window.addFlags(FLAG_KEEP_SCREEN_ON)
 
         // Change navigation bar and background colors to the same
-        window.setStatusAndNavigationBarsBackgroundColor(ContextCompat.getColor(this, R.color.black_haze))
+        window.setStatusAndNavigationBarsBackgroundColor(
+            ContextCompat.getColor(this, R.color.black_haze)
+        )
         window.enableContrastColorModeForStatusAndNavigationBars()
 
         // Launch a start fragment

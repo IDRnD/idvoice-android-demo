@@ -29,10 +29,14 @@ class RecordAndProcessView : ConstraintLayout, LifecycleObserver {
     private val view = LayoutInflater.from(context).inflate(
         R.layout.record_and_process_view,
         this,
-        true,
+        true
     )
 
-    private val container by lazy { view.findViewById<ViewGroup>(R.id.recordAndProcessViewContainer) }
+    private val container by lazy {
+        view.findViewById<ViewGroup>(
+            R.id.recordAndProcessViewContainer
+        )
+    }
 
     /**
      * [State] of view. You can change it for change an appearance state.
@@ -47,19 +51,19 @@ class RecordAndProcessView : ConstraintLayout, LifecycleObserver {
             Log.d(TAG, "Change state from $field to $newState")
 
             when (field to newState) {
-                Record to State.Process, ProcessIsFinished to State.Process -> {
+                Record to Process, ProcessIsFinished to Process -> {
                     visualizer.visibility = GONE
                     processingImage.visibility = VISIBLE
                     messageAboutProcessView.visibility = VISIBLE
                 }
 
-                Record to ProcessIsFinished, State.Process to ProcessIsFinished -> {
+                Record to ProcessIsFinished, Process to ProcessIsFinished -> {
                     visualizer.visibility = GONE
                     processingImage.visibility = GONE
                     messageAboutProcessView.visibility = GONE
                 }
 
-                State.Process to Record, ProcessIsFinished to Record -> {
+                Process to Record, ProcessIsFinished to Record -> {
                     visualizer.visibility = VISIBLE
                     processingImage.visibility = GONE
                     messageAboutProcessView.visibility = GONE
@@ -81,19 +85,29 @@ class RecordAndProcessView : ConstraintLayout, LifecycleObserver {
         }
 
     private val processingImage: ImageView by lazy { view.findViewById(R.id.processingImage) }
-    private val messageAboutProcessView: TextView by lazy { view.findViewById(R.id.messageAboutProcess) }
+    private val messageAboutProcessView: TextView by lazy {
+        view.findViewById(R.id.messageAboutProcess)
+    }
     private val visualizer: LightCircle by lazy { view.findViewById(R.id.visualizer) }
 
     var messageAboutProcess
-        set(value) { messageAboutProcessView.text = value }
+        set(value) {
+            messageAboutProcessView.text = value
+        }
         get() = messageAboutProcessView.text
 
     constructor(context: Context) : this(context, null)
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
-    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
+    constructor(
+        context: Context,
+        attrs: AttributeSet?,
+        defStyleAttr: Int
+    ) : super(context, attrs, defStyleAttr) {
 
         context.withStyledAttributes(attrs, R.styleable.RecordAndProcessView, defStyleAttr) {
-            messageAboutProcess = getString(R.styleable.RecordAndProcessView_message_about_process) ?: DEFAULT_MESSAGE_ABOUT_PROCESS
+            messageAboutProcess = getString(
+                R.styleable.RecordAndProcessView_message_about_process
+            ) ?: DEFAULT_MESSAGE_ABOUT_PROCESS
 
             // Call is here because method has specific logic to set background of inner views and must to call after
             // a view inflating.
@@ -128,7 +142,11 @@ class RecordAndProcessView : ConstraintLayout, LifecycleObserver {
         try {
             container.background = background
         } catch (e: NullPointerException) {
-            Log.d(TAG, "Try to set background before finish of view inflating. This is expected behaviour.", e)
+            Log.d(
+                TAG,
+                "Try to set background before finish of view inflating. This is expected behaviour.",
+                e
+            )
         }
     }
 
@@ -148,6 +166,6 @@ class RecordAndProcessView : ConstraintLayout, LifecycleObserver {
     enum class State {
         Record,
         Process,
-        ProcessIsFinished,
+        ProcessIsFinished
     }
 }

@@ -24,7 +24,7 @@ class EnrollerView : ConstraintLayout, LifecycleObserver {
     private val view = LayoutInflater.from(context).inflate(
         R.layout.ti_enroller_view,
         this,
-        true,
+        true
     )
 
     /**
@@ -74,23 +74,34 @@ class EnrollerView : ConstraintLayout, LifecycleObserver {
             field = newState
         }
 
-    private val tipsTextView: TextView by lazy { view.findViewById(R.id.headerTiEnrollmentTipsTextView) }
-    private val titleTiTipsViewView: TextView by lazy { view.findViewById(R.id.tiEnrollmentTipsTextView) }
+    private val tipsTextView: TextView by lazy {
+        view.findViewById(R.id.headerTiEnrollmentTipsTextView)
+    }
+    private val titleTiTipsViewView: TextView by lazy {
+        view.findViewById(R.id.tiEnrollmentTipsTextView)
+    }
     private val progressBar: ProgressBar by lazy { view.findViewById(R.id.speechProgressBar) }
     private val visualizer: LightCircle by lazy { view.findViewById(R.id.visualizer) }
 
-    private val messageAboutProcessView: TextView by lazy { view.findViewById(R.id.messageAboutProcess2) }
+    private val messageAboutProcessView: TextView by lazy {
+        view.findViewById(R.id.messageAboutProcess2)
+    }
     private val processingImage: ImageView by lazy { view.findViewById(R.id.processingImage2) }
 
     constructor(context: Context) : this(context, null)
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
-    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr)
+    constructor(
+        context: Context,
+        attrs: AttributeSet?,
+        defStyleAttr: Int
+    ) : super(context, attrs, defStyleAttr)
 
     fun setProgress(progress: Int) {
         progressBar.progress = progress
     }
 
     private val waitingCallback = WaitingCallback(350L) {
+        if (!isAttachedToWindow) return@WaitingCallback
         handler.post { visualizer.lightOff() }
     }
 
@@ -114,6 +125,6 @@ class EnrollerView : ConstraintLayout, LifecycleObserver {
     enum class State {
         Record,
         Process,
-        ProcessIsFinished,
+        ProcessIsFinished
     }
 }

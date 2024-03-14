@@ -21,7 +21,6 @@ import com.idrnd.idvoice.utils.views.EnrollerView.State.ProcessIsFinished
 import net.idrnd.voicesdk.liveness.LivenessEngine
 import net.idrnd.voicesdk.media.QualityCheckEngine
 import net.idrnd.voicesdk.verify.VoiceTemplateFactory
-import java.io.File
 
 class EnrollerViewModel(
     context: Context,
@@ -35,8 +34,6 @@ class EnrollerViewModel(
     val isSpeechRecorded = MutableLiveData<Unit>()
     val messageId = LiveEvent<Int?>()
     val state = MutableLiveData(State.Record)
-    val audioRecordIsPaused: Boolean
-        get() = tiEnrollmentRecorder.isPaused
 
     private val tiEnrollmentRecorder: TiEnrollmentRecorder
     private val templateFactory: VoiceTemplateFactory
@@ -54,57 +51,46 @@ class EnrollerViewModel(
 
                 override fun onSpeechQualityStatus(status: SpeechQualityStatus) {
                     when (status) {
-                        SpeechQualityStatus.TooNoisy -> {
+                        SpeechQualityStatus.TooNoisy ->
                             messageId.postValue(R.string.speech_is_too_noisy)
-                        }
-                        SpeechQualityStatus.TooSmallSpeechTotalLength -> {
+
+                        SpeechQualityStatus.TooSmallSpeechTotalLength ->
                             messageId.postValue(R.string.total_speech_length_is_not_enough)
-                        }
                         // We will never get this value due to 0f value from MIN_RELATIVE_SPEECH_LENGTH_FOR_CHUNKS_IN_MS.
                         // Anyways we are defining it here for consistency.
-                        SpeechQualityStatus.TooSmallSpeechRelativeLength -> {
+                        SpeechQualityStatus.TooSmallSpeechRelativeLength ->
                             messageId.postValue(R.string.relative_speech_length_is_not_enough)
-                        }
 
-                        SpeechQualityStatus.MultipleSpeakersDetected -> {
-                            messageId.postValue(R.string.multi_speaker_detected)
-                        }
-                        SpeechQualityStatus.Ok -> {
+                        SpeechQualityStatus.MultipleSpeakersDetected ->
+                            messageId.postValue(R.string.multi_speaker_detected_try_again)
+
+                        SpeechQualityStatus.Ok ->
                             messageId.postValue(R.string.please_continue_talking)
-                        }
                     }
+                }
+
+                override fun onLivenessCheckStatus(status: LivenessCheckStatus) {
+                    messageId.postValue(R.string.speech_is_not_live_enroll_again)
                 }
 
                 override fun onLivenessCheckStarted() {
                     state.postValue(Process)
                 }
 
-                override fun onComplete(
-                    audioFile: File,
-                    speechLengthInMs: Float,
-                    speechQualityStatus: SpeechQualityStatus,
-                    livenessCheckStatus: LivenessCheckStatus,
-                ) {
-                    if (livenessCheckStatus == LivenessCheckStatus.SpoofDetected) {
-                        enrollmentProgress.postValue(0)
-                        state.postValue(State.Record)
-                        messageId.postValue(R.string.speech_is_not_live_enroll_again)
-                    }
-
-                    // Set processing state
+                override fun onComplete(speechBytes: ByteArray) {
+                    // Signal UI as processing
                     state.postValue(Process)
 
                     // Set message for user as null so that it doesn't appear when a screen is rotated.
                     messageId.postValue(null)
 
-                    // Read bytes from output file
-                    val recordedBytes = audioFile.readBytes()
-
                     // Make template from record
-                    val template = templateFactory.createVoiceTemplate(recordedBytes, GlobalPrefs.sampleRate)
+                    val template =
+                        templateFactory.createVoiceTemplate(speechBytes, GlobalPrefs.sampleRate)
 
                     // Save template in file system
-                    val templateFile = templateFileCreator.createTemplateFile(GlobalPrefs.templateFilename, true)
+                    val templateFile =
+                        templateFileCreator.createTemplateFile(GlobalPrefs.templateFilename, true)
                     template.saveToFile(templateFile.absolutePath)
 
                     // Save template path in prefs
@@ -122,7 +108,7 @@ class EnrollerViewModel(
                 }
 
                 override fun onSpeechPartRecorded() {
-                    this@EnrollerViewModel.isSpeechRecorded.postValue(Unit)
+                    isSpeechRecorded.postValue(Unit)
                 }
             },
             qualityCheckEngine
@@ -136,22 +122,9 @@ class EnrollerViewModel(
         tiEnrollmentRecorder.start()
     }
 
-    fun pauseRecord() {
-        // Process must continue
-        if (state.value == Process || state.value == ProcessIsFinished) return
-        tiEnrollmentRecorder.pause()
-    }
-
-    fun resumeRecord() {
-        // Process must continue
-        if (state.value == Process || state.value == ProcessIsFinished) return
-        tiEnrollmentRecorder.resume()
-    }
-
     fun stopRecord() {
         // Process must continue
         if (state.value == Process || state.value == ProcessIsFinished) return
-        // Stop record
         tiEnrollmentRecorder.stop()
     }
 
@@ -163,7 +136,8 @@ class EnrollerViewModel(
     companion object {
         val EnrollerViewModelFactory = viewModelFactory {
             initializer {
-                val app = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MainApplication
+                val app =
+                    this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MainApplication
                 EnrollerViewModel(
                     app.applicationContext,
                     app.voiceTemplateFactory,

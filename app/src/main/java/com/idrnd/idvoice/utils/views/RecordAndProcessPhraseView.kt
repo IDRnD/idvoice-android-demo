@@ -21,13 +21,23 @@ class RecordAndProcessPhraseView : ConstraintLayout {
     private val view = LayoutInflater.from(context).inflate(
         R.layout.record_and_process_phrase_view,
         this,
-        true,
+        true
     )
 
-    private val rootRecordAndProcessPhraseView: ViewGroup by lazy { view.findViewById(R.id.rootRecordAndProcessPhraseView) }
-    private val recordAndProcessView: RecordAndProcessView by lazy { view.findViewById(R.id.recordAndProcessView) }
-    private val messageAboutPhraseView: TextView by lazy { view.findViewById(R.id.messageAboutPhraseView) }
-    private val phraseForPronouncingView: TextView by lazy { view.findViewById(R.id.phraseForPronouncingView) }
+    private val rootRecordAndProcessPhraseView: ViewGroup by lazy {
+        view.findViewById(
+            R.id.rootRecordAndProcessPhraseView
+        )
+    }
+    private val recordAndProcessView: RecordAndProcessView by lazy {
+        view.findViewById(R.id.recordAndProcessView)
+    }
+    private val messageAboutPhraseView: TextView by lazy {
+        view.findViewById(R.id.messageAboutPhraseView)
+    }
+    private val phraseForPronouncingView: TextView by lazy {
+        view.findViewById(R.id.phraseForPronouncingView)
+    }
 
     var state = Record
         set(newState) {
@@ -58,34 +68,52 @@ class RecordAndProcessPhraseView : ConstraintLayout {
         }
 
     var lifecycle
-        set(value) { recordAndProcessView.lifecycle = value }
+        set(value) {
+            recordAndProcessView.lifecycle = value
+        }
         get() = recordAndProcessView.lifecycle
 
     var messageAboutProcess
-        set(value) { recordAndProcessView.messageAboutProcess = value }
+        set(value) {
+            recordAndProcessView.messageAboutProcess = value
+        }
         get() = recordAndProcessView.messageAboutProcess
 
     var messageAboutPhrase
-        set(value) { messageAboutPhraseView.text = value }
+        set(value) {
+            messageAboutPhraseView.text = value
+        }
         get() = messageAboutPhraseView.text
 
     var phraseForPronouncing
-        set(value) { phraseForPronouncingView.text = value }
+        set(value) {
+            phraseForPronouncingView.text = value
+        }
         get() = phraseForPronouncingView.text
 
     constructor(context: Context) : this(context, null)
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
-    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
+    constructor(
+        context: Context,
+        attrs: AttributeSet?,
+        defStyleAttr: Int
+    ) : super(context, attrs, defStyleAttr) {
 
         context.withStyledAttributes(attrs, R.styleable.RecordAndProcessPhraseView, defStyleAttr) {
 
-            messageAboutProcess = getString(R.styleable.RecordAndProcessPhraseView_message_about_process)
+            messageAboutProcess = getString(
+                R.styleable.RecordAndProcessPhraseView_message_about_process
+            )
                 ?: DEFAULT_MESSAGE_ABOUT_PROCESS
 
-            messageAboutPhrase = getString(R.styleable.RecordAndProcessPhraseView_message_about_phrase)
+            messageAboutPhrase = getString(
+                R.styleable.RecordAndProcessPhraseView_message_about_phrase
+            )
                 ?: DEFAULT_MESSAGE_ABOUT_PHRASE
 
-            phraseForPronouncing = getString(R.styleable.RecordAndProcessPhraseView_phrase_for_pronouncing)
+            phraseForPronouncing = getString(
+                R.styleable.RecordAndProcessPhraseView_phrase_for_pronouncing
+            )
                 ?: DEFAULT_PHRASE_FOR_PRONOUNCING
 
             // Call is here because method has specific logic to set background of inner views and must to call after
@@ -101,7 +129,11 @@ class RecordAndProcessPhraseView : ConstraintLayout {
             rootRecordAndProcessPhraseView.background = background
             recordAndProcessView.background = background
         } catch (e: NullPointerException) {
-            Log.d(TAG, "Try to set background before finish of view inflating. This is expected behaviour.", e)
+            Log.d(
+                TAG,
+                "Try to set background before finish of view inflating. This is expected behaviour.",
+                e
+            )
         }
     }
 
@@ -123,6 +155,6 @@ class RecordAndProcessPhraseView : ConstraintLayout {
     enum class State {
         Record,
         Process,
-        ProcessIsFinished,
+        ProcessIsFinished
     }
 }

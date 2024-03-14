@@ -3,7 +3,6 @@ package com.idrnd.idvoice.enrollment.ti.recorder
 import androidx.annotation.FloatRange
 import com.idrnd.idvoice.utils.speech.params.LivenessCheckStatus
 import com.idrnd.idvoice.utils.speech.params.SpeechQualityStatus
-import java.io.File
 
 /**
  * Listener of events from TI enrollment recorder.
@@ -16,24 +15,21 @@ interface TiEnrollmentEventListener {
     fun onSpeechQualityStatus(status: SpeechQualityStatus)
 
     /**
+     * Called when a recorder checks speech liveness.
+     * @param status Status of liveness check.
+     */
+    fun onLivenessCheckStatus(status: LivenessCheckStatus)
+
+    /**
      * Called when a recorder has started speech liveness.
      */
     fun onLivenessCheckStarted()
 
     /**
      * Called when a recorder has completed recording.
-     * @param audioFile File with recording for voice template making.
-     * @param speechLengthInMs Collected speech length in ms.
-     * @param snrInDb SNR of speech in ms.
-     * @param speechQualityStatus Quality of speech.
-     * @param livenessCheckStatus Liveness state of speech.
+     * @param speechBytes the total speech bytes.
      */
-    fun onComplete(
-        audioFile: File,
-        speechLengthInMs: Float,
-        speechQualityStatus: SpeechQualityStatus,
-        livenessCheckStatus: LivenessCheckStatus,
-    )
+    fun onComplete(speechBytes: ByteArray)
 
     /**
      * Called when a recorder has a new progress value.

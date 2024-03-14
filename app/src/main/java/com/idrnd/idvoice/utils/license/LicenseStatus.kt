@@ -17,5 +17,5 @@ enum class LicenseStatus {
     /**
      * Valid license.
      */
-    Valid,
+    Valid
 }

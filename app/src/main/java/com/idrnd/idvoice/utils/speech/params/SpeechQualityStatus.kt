@@ -5,5 +5,5 @@ enum class SpeechQualityStatus {
     TooNoisy,
     TooSmallSpeechTotalLength,
     TooSmallSpeechRelativeLength,
-    MultipleSpeakersDetected,
+    MultipleSpeakersDetected
 }
