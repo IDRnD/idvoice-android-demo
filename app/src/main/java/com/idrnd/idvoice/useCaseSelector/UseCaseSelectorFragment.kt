@@ -26,13 +26,6 @@ import net.idrnd.voicesdk.core.BuildInfo
 
 class UseCaseSelectorFragment : Fragment(R.layout.use_case_selector_fragment) {
 
-    private lateinit var biometricAnalysisTypeTabs: TabLayout
-    private lateinit var biometricsSelectorContainer: ViewGroup
-    private lateinit var enrollButton: Button
-    private lateinit var verifyButton: View
-    private lateinit var voiceSdkVersion: TextView
-    private lateinit var voiceSdkLicenseExpirationDate: TextView
-
     private val viewModel: UseCaseSelectorViewModel by viewModels { UseCaseSelectorViewModelFactory }
 
     private val enrollPermissionRequester =
@@ -57,12 +50,12 @@ class UseCaseSelectorFragment : Fragment(R.layout.use_case_selector_fragment) {
         super.onViewCreated(view, savedInstanceState)
 
         // Get views
-        biometricAnalysisTypeTabs = view.findViewById(R.id.biometricAnalysisTypeTabs)
-        biometricsSelectorContainer = view.findViewById(R.id.biometricsSelectorContainer)
-        enrollButton = view.findViewById(R.id.enrollButton)
-        verifyButton = view.findViewById(R.id.verifyButton)
-        voiceSdkVersion = view.findViewById(R.id.voiceSdkVersion)
-        voiceSdkLicenseExpirationDate = view.findViewById(R.id.voiceSdkLicenseExpirationDate)
+        val biometricAnalysisTypeTabs = view.findViewById<TabLayout>(R.id.biometricAnalysisTypeTabs)
+        val biometricsSelectorContainer = view.findViewById<ViewGroup>(R.id.biometricsSelectorContainer)
+        val enrollButton = view.findViewById<Button>(R.id.enrollButton)
+        val verifyButton = view.findViewById<View>(R.id.verifyButton)
+        val voiceSdkVersion = view.findViewById<TextView>(R.id.voiceSdkVersion)
+        val voiceSdkLicenseExpirationDate = view.findViewById<TextView>(R.id.voiceSdkLicenseExpirationDate)
 
         // Set listeners on views
         biometricAnalysisTypeTabs.addOnTabSelectedListener(
@@ -155,15 +148,17 @@ class UseCaseSelectorFragment : Fragment(R.layout.use_case_selector_fragment) {
             verifyButton.isEnabled = isEnabled
         }
 
-        viewModel.onFragmentToLaunch.observe(viewLifecycleOwner) { fragment ->
-            replaceWithFragment(fragment, true)
+        viewModel.onFragmentToLaunch?.observe(viewLifecycleOwner) { fragmentClass ->
+            replaceWithFragment(fragmentClass, true)
         }
     }
 
     override fun onStart() {
         super.onStart()
         // Select valid biometrics tab
-        biometricAnalysisTypeTabs.getTabAt(GlobalPrefs.biometricsType.ordinal)?.select()
+        view?.findViewById<TabLayout>(R.id.biometricAnalysisTypeTabs)?.apply {
+            this.getTabAt(GlobalPrefs.biometricsType.ordinal)?.select()
+        }
     }
 
     companion object {

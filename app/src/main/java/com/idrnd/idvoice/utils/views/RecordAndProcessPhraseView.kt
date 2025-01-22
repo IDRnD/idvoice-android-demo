@@ -4,11 +4,11 @@ import android.content.Context
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.util.Log
-import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.withStyledAttributes
+import androidx.lifecycle.LifecycleObserver
 import com.idrnd.idvoice.R
 import com.idrnd.idvoice.utils.views.RecordAndProcessPhraseView.State.ProcessIsFinished
 import com.idrnd.idvoice.utils.views.RecordAndProcessPhraseView.State.Record
@@ -18,25 +18,8 @@ import com.idrnd.idvoice.utils.views.RecordAndProcessPhraseView.State.Record
  */
 class RecordAndProcessPhraseView : ConstraintLayout {
 
-    private val view = LayoutInflater.from(context).inflate(
-        R.layout.record_and_process_phrase_view,
-        this,
-        true
-    )
-
-    private val rootRecordAndProcessPhraseView: ViewGroup by lazy {
-        view.findViewById(
-            R.id.rootRecordAndProcessPhraseView
-        )
-    }
-    private val recordAndProcessView: RecordAndProcessView by lazy {
-        view.findViewById(R.id.recordAndProcessView)
-    }
-    private val messageAboutPhraseView: TextView by lazy {
-        view.findViewById(R.id.messageAboutPhraseView)
-    }
-    private val phraseForPronouncingView: TextView by lazy {
-        view.findViewById(R.id.phraseForPronouncingView)
+    init {
+        inflate(context, R.layout.record_and_process_phrase_view, this)
     }
 
     var state = Record
@@ -46,50 +29,53 @@ class RecordAndProcessPhraseView : ConstraintLayout {
                 return
             }
 
+            val messageAboutPhraseView = getMessageAboutPhraseView()
+            val phraseForPronouncingView = getPhraseForPronouncingView()
+            val recordAndProcessView = getRecordAndProcessView()
+
             when (field to newState) {
                 Record to State.Process, ProcessIsFinished to State.Process -> {
                     messageAboutPhraseView.visibility = GONE
                     phraseForPronouncingView.visibility = GONE
-                    recordAndProcessView.state = RecordAndProcessView.State.Process
+                    recordAndProcessView.state =
+                        RecordAndProcessView.State.Process
                 }
+
                 Record to ProcessIsFinished, State.Process to ProcessIsFinished -> {
                     messageAboutPhraseView.visibility = GONE
                     phraseForPronouncingView.visibility = GONE
-                    recordAndProcessView.state = RecordAndProcessView.State.ProcessIsFinished
+                    recordAndProcessView.state =
+                        RecordAndProcessView.State.ProcessIsFinished
                 }
+
                 State.Process to Record, ProcessIsFinished to Record -> {
                     messageAboutPhraseView.visibility = VISIBLE
                     phraseForPronouncingView.visibility = VISIBLE
-                    recordAndProcessView.state = RecordAndProcessView.State.Record
+                    recordAndProcessView.state =
+                        RecordAndProcessView.State.Record
                 }
             }
 
             field = newState
         }
 
-    var lifecycle
-        set(value) {
-            recordAndProcessView.lifecycle = value
-        }
-        get() = recordAndProcessView.lifecycle
-
     var messageAboutProcess
         set(value) {
-            recordAndProcessView.messageAboutProcess = value
+            getRecordAndProcessView().messageAboutProcess = value
         }
-        get() = recordAndProcessView.messageAboutProcess
+        get() = getRecordAndProcessView().messageAboutProcess
 
     var messageAboutPhrase
         set(value) {
-            messageAboutPhraseView.text = value
+            getMessageAboutPhraseView().text = value
         }
-        get() = messageAboutPhraseView.text
+        get() = getMessageAboutPhraseView().text.toString()
 
     var phraseForPronouncing
         set(value) {
-            phraseForPronouncingView.text = value
+            getPhraseForPronouncingView().text = value
         }
-        get() = phraseForPronouncingView.text
+        get() = getPhraseForPronouncingView().text.toString()
 
     constructor(context: Context) : this(context, null)
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
@@ -122,28 +108,36 @@ class RecordAndProcessPhraseView : ConstraintLayout {
         }
     }
 
+    fun getLifecycleObserver(): LifecycleObserver = getRecordAndProcessView()
+
     override fun setBackground(background: Drawable?) {
         super.setBackground(background)
         // Set background color inner view
-        try {
-            rootRecordAndProcessPhraseView.background = background
-            recordAndProcessView.background = background
-        } catch (e: NullPointerException) {
-            Log.d(
-                TAG,
-                "Try to set background before finish of view inflating. This is expected behaviour.",
-                e
-            )
-        }
+
+        // Background not set message
+        val backgroundNotSetMessage =
+            "Try to set background before finish of view inflating. This is expected behaviour."
+
+        findViewById<ViewGroup>(R.id.rootRecordAndProcessPhraseView)?.apply {
+            this.background = background
+        } ?: Log.w(TAG, backgroundNotSetMessage)
+
+        getRecordAndProcessView()?.apply {
+            this.background = background
+        } ?: Log.w(TAG, backgroundNotSetMessage)
     }
 
     fun visualize() {
-        recordAndProcessView.visualize()
+        getRecordAndProcessView().visualize()
     }
 
     fun stopVisualization() {
-        recordAndProcessView.stopVisualization()
+        getRecordAndProcessView().stopVisualization()
     }
+
+    private fun getRecordAndProcessView() = findViewById<RecordAndProcessView>(R.id.recordAndProcessView)
+    private fun getMessageAboutPhraseView() = findViewById<TextView>(R.id.messageAboutPhraseView)
+    private fun getPhraseForPronouncingView() = findViewById<TextView>(R.id.phraseForPronouncingView)
 
     companion object {
         private val TAG = RecordAndProcessPhraseView::class.simpleName

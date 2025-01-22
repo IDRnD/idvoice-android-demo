@@ -24,19 +24,15 @@ import com.idrnd.idvoice.utils.views.PhraseEnrollmentView.State.Record
 
 class PhraseEnrollerFragment : Fragment(R.layout.phrase_enroller_fragmnet) {
 
-    private lateinit var phraseEnrollmentView: PhraseEnrollmentView
-    private lateinit var backButton: Button
-    private lateinit var livenessCheckProgressBar: ProgressBar
-
     private val viewModel: PhraseEnrollerViewModel by viewModels { PhraseEnrollerViewModelFactory }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         // Get views
-        phraseEnrollmentView = view.findViewById(R.id.phraseEnrollmentView)
-        backButton = view.findViewById(R.id.myTextDependentEnrollBackButton)
-        livenessCheckProgressBar = view.findViewById(R.id.livenessCheckProgressBar)
+        val phraseEnrollmentView = view.findViewById<PhraseEnrollmentView>(R.id.phraseEnrollmentView)
+        val backButton = view.findViewById<Button>(R.id.myTextDependentEnrollBackButton)
+        val livenessCheckProgressBar = view.findViewById<ProgressBar>(R.id.livenessCheckProgressBar)
 
         // Set listeners/observers
         viewModel.messageId.observe(viewLifecycleOwner) { messageId ->
@@ -99,7 +95,7 @@ class PhraseEnrollerFragment : Fragment(R.layout.phrase_enroller_fragmnet) {
                     parentFragmentManager.popBackStack(null, POP_BACK_STACK_INCLUSIVE)
 
                     // Go to start fragment
-                    replaceWithFragment(UseCaseSelectorFragment(), false)
+                    replaceWithFragment(UseCaseSelectorFragment::class.java, false)
                 }
             }
         }
@@ -109,8 +105,10 @@ class PhraseEnrollerFragment : Fragment(R.layout.phrase_enroller_fragmnet) {
             requireActivity().onBackPressed()
         }
 
+        // Observe fragment's lifecycle
+        val lifecycleObserver = phraseEnrollmentView.getLifecycleObserver()
+        lifecycle.addObserver(lifecycleObserver)
         // Init phrase enrollment view
-        phraseEnrollmentView.lifecycle = lifecycle
         phraseEnrollmentView.messageAboutPhrase = getString(R.string.please_pronounce_phrase)
 
         // Init indicator views

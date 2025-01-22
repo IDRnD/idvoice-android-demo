@@ -21,17 +21,14 @@ import com.idrnd.idvoice.utils.views.EnrollerView.State.Record
 
 class EnrollerFragment : Fragment(R.layout.ti_enroller_fragment) {
 
-    private lateinit var enrollerView: EnrollerView
-    private lateinit var backButton: Button
-
     private val viewModel: EnrollerViewModel by viewModels { EnrollerViewModelFactory }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         // Get views
-        enrollerView = view.findViewById(R.id.enrollmentView)
-        backButton = view.findViewById(R.id.tiEnrollBackButton)
+        val enrollerView = view.findViewById<EnrollerView>(R.id.enrollmentView)
+        val backButton = view.findViewById<Button>(R.id.tiEnrollBackButton)
 
         // Set listeners/observers
         viewModel.messageId.observe(viewLifecycleOwner) { message ->
@@ -58,7 +55,7 @@ class EnrollerFragment : Fragment(R.layout.ti_enroller_fragment) {
                 parentFragmentManager.popBackStack(null, POP_BACK_STACK_INCLUSIVE)
 
                 // Go to start fragment
-                replaceWithFragment(UseCaseSelectorFragment(), false)
+                replaceWithFragment(UseCaseSelectorFragment::class.java, false)
             }
         }
 

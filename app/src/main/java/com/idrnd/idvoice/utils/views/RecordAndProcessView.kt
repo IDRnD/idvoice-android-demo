@@ -4,16 +4,13 @@ import android.content.Context
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.util.Log
-import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.withStyledAttributes
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.Lifecycle.Event.ON_RESUME
-import androidx.lifecycle.LifecycleObserver
-import androidx.lifecycle.OnLifecycleEvent
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import com.idrnd.idvoice.R
 import com.idrnd.idvoice.utils.views.RecordAndProcessView.State.Process
 import com.idrnd.idvoice.utils.views.RecordAndProcessView.State.ProcessIsFinished
@@ -24,18 +21,10 @@ import com.idrnd.idvoice.utils.views.lightCircle.WaitingCallback
 /**
  * View that must record and process something.
  */
-class RecordAndProcessView : ConstraintLayout, LifecycleObserver {
+class RecordAndProcessView : ConstraintLayout, DefaultLifecycleObserver {
 
-    private val view = LayoutInflater.from(context).inflate(
-        R.layout.record_and_process_view,
-        this,
-        true
-    )
-
-    private val container by lazy {
-        view.findViewById<ViewGroup>(
-            R.id.recordAndProcessViewContainer
-        )
+    init {
+        inflate(context, R.layout.record_and_process_view, this)
     }
 
     /**
@@ -48,53 +37,40 @@ class RecordAndProcessView : ConstraintLayout, LifecycleObserver {
                 return
             }
 
+            val visualizer = findViewById<LightCircle>(R.id.visualizer)
+            val processingImage = findViewById<ImageView>(R.id.processingImage)
+            val messageAboutProcess = findViewById<TextView>(R.id.messageAboutProcess)
+
             Log.d(TAG, "Change state from $field to $newState")
 
             when (field to newState) {
                 Record to Process, ProcessIsFinished to Process -> {
                     visualizer.visibility = GONE
                     processingImage.visibility = VISIBLE
-                    messageAboutProcessView.visibility = VISIBLE
+                    messageAboutProcess.visibility = VISIBLE
                 }
 
                 Record to ProcessIsFinished, Process to ProcessIsFinished -> {
                     visualizer.visibility = GONE
                     processingImage.visibility = GONE
-                    messageAboutProcessView.visibility = GONE
+                    messageAboutProcess.visibility = GONE
                 }
 
                 Process to Record, ProcessIsFinished to Record -> {
                     visualizer.visibility = VISIBLE
                     processingImage.visibility = GONE
-                    messageAboutProcessView.visibility = GONE
+                    messageAboutProcess.visibility = GONE
                 }
             }
 
             field = newState
         }
 
-    /**
-     * Lifecycle for view. You need add it, that view will be auto-changing by lifecycle.
-     */
-    var lifecycle: Lifecycle? = null
-        set(value) {
-            // Update an observer on lifecycle
-            field?.removeObserver(this)
-            field = value
-            field?.addObserver(this)
-        }
-
-    private val processingImage: ImageView by lazy { view.findViewById(R.id.processingImage) }
-    private val messageAboutProcessView: TextView by lazy {
-        view.findViewById(R.id.messageAboutProcess)
-    }
-    private val visualizer: LightCircle by lazy { view.findViewById(R.id.visualizer) }
-
     var messageAboutProcess
         set(value) {
-            messageAboutProcessView.text = value
+            findViewById<TextView>(R.id.messageAboutProcess).text = value
         }
-        get() = messageAboutProcessView.text
+        get() = findViewById<TextView>(R.id.messageAboutProcess).text.toString()
 
     constructor(context: Context) : this(context, null)
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
@@ -116,7 +92,8 @@ class RecordAndProcessView : ConstraintLayout, LifecycleObserver {
     }
 
     private val waitingCallback = WaitingCallback(350L) {
-        handler.post { visualizer.lightOff() }
+        if (handler == null) return@WaitingCallback
+        handler.post { findViewById<LightCircle>(R.id.visualizer).lightOff() }
     }
 
     /**
@@ -124,30 +101,28 @@ class RecordAndProcessView : ConstraintLayout, LifecycleObserver {
      */
     fun visualize() {
         waitingCallback.waitFurther()
+        val visualizer = findViewById<LightCircle>(R.id.visualizer)
         if (!visualizer.isLightOn) visualizer.lightOn()
     }
 
     fun stopVisualization() {
-        visualizer.lightOff()
+        findViewById<LightCircle>(R.id.visualizer).lightOff()
     }
 
-    @OnLifecycleEvent(ON_RESUME)
-    fun onResume() {
+    override fun onResume(owner: LifecycleOwner) {
+        super.onResume(owner)
         stopVisualization()
     }
 
     override fun setBackground(background: Drawable?) {
         super.setBackground(background)
         // Set background color inner view
-        try {
-            container.background = background
-        } catch (e: NullPointerException) {
-            Log.d(
-                TAG,
-                "Try to set background before finish of view inflating. This is expected behaviour.",
-                e
-            )
-        }
+        findViewById<ViewGroup>(R.id.recordAndProcessViewContainer)?.apply {
+            this.background = background
+        } ?: Log.w(
+            TAG,
+            "Try to set background before finish of view inflating. This is expected behaviour."
+        )
     }
 
     companion object {
