@@ -9,15 +9,12 @@ import com.idrnd.idvoice.utils.extensions.replaceWithFragment
 
 class EnrollmentNotifierFragment : Fragment(R.layout.enrollment_notifier_fragment) {
 
-    private lateinit var backButton: Button
-    private lateinit var recordButton: Button
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         // Get views
-        backButton = view.findViewById(R.id.noticeOfTiEnrollBackButton)
-        recordButton = view.findViewById(R.id.startRecordButton)
+        val backButton = view.findViewById<Button>(R.id.noticeOfTiEnrollBackButton)
+        val recordButton = view.findViewById<Button>(R.id.startRecordButton)
 
         // Set listeners/observers
         backButton.setOnClickListener {
@@ -27,7 +24,7 @@ class EnrollmentNotifierFragment : Fragment(R.layout.enrollment_notifier_fragmen
 
         recordButton.setOnClickListener {
             // Go to enroller fragment
-            replaceWithFragment(EnrollerFragment(), true)
+            replaceWithFragment(EnrollerFragment::class.java, true)
         }
     }
 }

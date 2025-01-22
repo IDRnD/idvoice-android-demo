@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.util.Log
-import android.view.LayoutInflater
 import android.widget.CheckBox
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.Group
@@ -18,21 +17,8 @@ import com.idrnd.idvoice.utils.views.PhraseEnrollmentView.State.Record
  */
 class PhraseEnrollmentView : ConstraintLayout {
 
-    private val view = LayoutInflater.from(context).inflate(
-        R.layout.phrase_enrollment_view,
-        this,
-        true
-    )
-
-    private val recordAndProcessPhraseView: RecordAndProcessPhraseView by lazy {
-        view.findViewById(R.id.recordAndProcessPhraseView)
-    }
-
-    private val statusIndicators: Array<CheckBox> by lazy {
-        view.findViewById<Group>(R.id.statusIndicators)
-            .referencedIds
-            .map { view.findViewById<CheckBox>(it) }
-            .toTypedArray()
+    init {
+        inflate(context, R.layout.phrase_enrollment_view, this)
     }
 
     var state = Record
@@ -42,15 +28,20 @@ class PhraseEnrollmentView : ConstraintLayout {
                 return
             }
 
+            val statusIndicators = getStatusIndicators()
+            val recordAndProcessPhraseView = getRecordAndProcessPhraseView()
+
             when (field to newState) {
                 Record to State.Process, ProcessIsFinished to State.Process -> {
                     statusIndicators.forEach { it.visibility = GONE }
                     recordAndProcessPhraseView.state = RecordAndProcessPhraseView.State.Process
                 }
+
                 Record to ProcessIsFinished, State.Process to ProcessIsFinished -> {
                     statusIndicators.forEach { it.visibility = GONE }
                     recordAndProcessPhraseView.state = RecordAndProcessPhraseView.State.ProcessIsFinished
                 }
+
                 State.Process to Record, ProcessIsFinished to Record -> {
                     statusIndicators.forEach { it.visibility = VISIBLE }
                     recordAndProcessPhraseView.state = RecordAndProcessPhraseView.State.Record
@@ -60,29 +51,23 @@ class PhraseEnrollmentView : ConstraintLayout {
             field = newState
         }
 
-    var lifecycle
-        set(value) {
-            recordAndProcessPhraseView.lifecycle = value
-        }
-        get() = recordAndProcessPhraseView.lifecycle
-
     var messageAboutProcess
         set(value) {
-            recordAndProcessPhraseView.messageAboutProcess = value
+            getRecordAndProcessPhraseView().messageAboutProcess = value
         }
-        get() = recordAndProcessPhraseView.messageAboutProcess
+        get() = getRecordAndProcessPhraseView().messageAboutProcess
 
     var messageAboutPhrase
         set(value) {
-            recordAndProcessPhraseView.messageAboutPhrase = value
+            getRecordAndProcessPhraseView().messageAboutPhrase = value
         }
-        get() = recordAndProcessPhraseView.messageAboutPhrase
+        get() = getRecordAndProcessPhraseView().messageAboutPhrase
 
     var phraseForPronouncing
         set(value) {
-            recordAndProcessPhraseView.phraseForPronouncing = value
+            getRecordAndProcessPhraseView().phraseForPronouncing = value
         }
-        get() = recordAndProcessPhraseView.phraseForPronouncing
+        get() = getRecordAndProcessPhraseView().phraseForPronouncing
 
     constructor(context: Context) : this(context, null)
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
@@ -111,31 +96,38 @@ class PhraseEnrollmentView : ConstraintLayout {
         }
     }
 
+    fun getLifecycleObserver() = getRecordAndProcessPhraseView().getLifecycleObserver()
+
     override fun setBackground(background: Drawable?) {
         super.setBackground(background)
         // Set background color inner view
-        try {
-            recordAndProcessPhraseView.background = background
-        } catch (e: NullPointerException) {
-            Log.d(
-                TAG,
-                "Try to set background before finish of view inflating. This is expected behaviour.",
-                e
-            )
-        }
+        getRecordAndProcessPhraseView()?.apply {
+            this.background = background
+        } ?: Log.w(
+            TAG,
+            "Try to set background before finish of view inflating. This is expected behaviour."
+        )
     }
 
     fun setCheckedRecordIndicatorByIndex(index: Int, checked: Boolean) {
-        statusIndicators[index].isChecked = checked
+        getStatusIndicators()[index].isChecked = checked
     }
 
     fun visualize() {
-        recordAndProcessPhraseView.visualize()
+        getRecordAndProcessPhraseView().visualize()
     }
 
     fun stopVisualization() {
-        recordAndProcessPhraseView.stopVisualization()
+        getRecordAndProcessPhraseView().stopVisualization()
     }
+
+    private fun getStatusIndicators() = findViewById<Group>(R.id.statusIndicators)
+        .referencedIds
+        .map { findViewById<CheckBox>(it) }
+        .toTypedArray()
+
+    private fun getRecordAndProcessPhraseView() =
+        findViewById<RecordAndProcessPhraseView>(R.id.recordAndProcessPhraseView)
 
     companion object {
         private val TAG = PhraseEnrollmentView::class.simpleName

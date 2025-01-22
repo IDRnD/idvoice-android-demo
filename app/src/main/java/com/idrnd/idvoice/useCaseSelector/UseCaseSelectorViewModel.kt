@@ -20,7 +20,7 @@ import java.io.File
 
 class UseCaseSelectorViewModel(context: Context) : ViewModel() {
 
-    var onFragmentToLaunch = LiveEvent<Fragment>()
+    var onFragmentToLaunch: LiveEvent<Class<out Fragment>>? = LiveEvent()
 
     val enrollmentButtonTitle = MutableLiveData<String>()
     val isVerificationButtonEnabled = MutableLiveData<Boolean>()
@@ -44,15 +44,15 @@ class UseCaseSelectorViewModel(context: Context) : ViewModel() {
     }
 
     fun onEnrollButtonClick() {
-        val fragment = when (GlobalPrefs.biometricsType) {
-            TextDependent -> PhraseEnrollerFragment()
-            TextIndependent -> EnrollmentNotifierFragment()
+        val fragmentClass = when (GlobalPrefs.biometricsType) {
+            TextDependent -> PhraseEnrollerFragment::class.java
+            TextIndependent -> EnrollmentNotifierFragment::class.java
         }
-        onFragmentToLaunch.postValue(fragment)
+        onFragmentToLaunch?.postValue(fragmentClass)
     }
 
     fun onVerifyButtonClick() {
-        onFragmentToLaunch.postValue(VerifierFragment())
+        onFragmentToLaunch?.postValue(VerifierFragment::class.java)
     }
 
     fun onBiometricsTypeTabClick(indexTab: Int) {
@@ -86,5 +86,10 @@ class UseCaseSelectorViewModel(context: Context) : ViewModel() {
                 UseCaseSelectorViewModel(app.applicationContext)
             }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        onFragmentToLaunch = null
     }
 }

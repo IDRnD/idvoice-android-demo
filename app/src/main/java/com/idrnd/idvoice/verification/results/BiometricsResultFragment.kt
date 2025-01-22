@@ -16,13 +16,6 @@ import com.idrnd.idvoice.utils.extensions.replaceWithFragment
 
 open class BiometricsResultFragment : Fragment(R.layout.biomertics_result_fragment) {
 
-    private lateinit var verificationValue: TextView
-    private lateinit var warningLabel: TextView
-    private lateinit var livenessValue: TextView
-
-    private lateinit var acceptButton: Button
-    private lateinit var backButton: Button
-
     private val viewModel: BiometricsResultViewModel by viewModels {
         BiometricsResultViewModel.BiometricsResultViewModelFactory(
             requireArguments().getFloat(BUNDLE_VERIFICATION_PROBABILITY),
@@ -35,7 +28,7 @@ open class BiometricsResultFragment : Fragment(R.layout.biomertics_result_fragme
         super.onAttach(context)
 
         requireActivity().onBackPressedDispatcher.addCallback(this, true) {
-            acceptButton.callOnClick()
+            view?.findViewById<Button>(R.id.acceptButton)?.callOnClick()
         }
     }
 
@@ -45,11 +38,11 @@ open class BiometricsResultFragment : Fragment(R.layout.biomertics_result_fragme
         postponeEnterTransition()
 
         // Get views
-        verificationValue = view.findViewById(R.id.verificationValue)
-        warningLabel = view.findViewById(R.id.warningLabel)
-        livenessValue = view.findViewById(R.id.livenessValue)
-        acceptButton = view.findViewById(R.id.acceptButton)
-        backButton = view.findViewById(R.id.verifyBackButton)
+        val verificationValue = view.findViewById<TextView>(R.id.verificationValue)
+        val warningLabel = view.findViewById<TextView>(R.id.warningLabel)
+        val livenessValue = view.findViewById<TextView>(R.id.livenessValue)
+        val acceptButton = view.findViewById<Button>(R.id.acceptButton)
+        val backButton = view.findViewById<Button>(R.id.verifyBackButton)
 
         // Init view with verification result
         val verifyProbabilityToColor = viewModel.verificationValueToColor
@@ -79,7 +72,7 @@ open class BiometricsResultFragment : Fragment(R.layout.biomertics_result_fragme
             parentFragmentManager.popBackStack(null, POP_BACK_STACK_INCLUSIVE)
 
             // Go to start fragment
-            replaceWithFragment(UseCaseSelectorFragment(), false)
+            replaceWithFragment(UseCaseSelectorFragment::class.java, false)
         }
 
         startPostponedEnterTransition()

@@ -21,19 +21,15 @@ import com.idrnd.idvoice.verification.VerifierViewModel.Companion.VerifierViewMo
 
 class VerifierFragment : Fragment(R.layout.verifier_fragment) {
 
-    private lateinit var backButton: Button
-    private lateinit var recordAndProcessPhraseView: RecordAndProcessPhraseView
-    private lateinit var progressBar: ProgressBar
-
     private val viewModel: VerifierViewModel by viewModels { VerifierViewModelFactory }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         // Get views
-        backButton = view.findViewById(R.id.myVerificationBackButton)
-        recordAndProcessPhraseView = view.findViewById(R.id.recordAndProcessPhraseView)
-        progressBar = view.findViewById(R.id.verifySpeechProgressBar)
+        val backButton = view.findViewById<Button>(R.id.myVerificationBackButton)
+        val recordAndProcessPhraseView = view.findViewById<RecordAndProcessPhraseView>(R.id.recordAndProcessPhraseView)
+        val progressBar = view.findViewById<ProgressBar>(R.id.verifySpeechProgressBar)
         progressBar.isVisible = (GlobalPrefs.biometricsType == BiometricsType.TextIndependent)
 
         viewModel.isSpeechRecorded.observe(viewLifecycleOwner) { isSpeechRecorded ->
@@ -81,8 +77,13 @@ class VerifierFragment : Fragment(R.layout.verifier_fragment) {
             recordAndProcessPhraseView.messageAboutPhrase = message
         }
 
-        viewModel.onResultFragment.observe(viewLifecycleOwner) { fragment ->
-            replaceWithFragment(fragment, true)
+        parentFragmentManager
+        viewModel.onResultFragment.observe(viewLifecycleOwner) { fragmentClassAndBundle ->
+            replaceWithFragment(
+                fragmentClassAndBundle.first,
+                false,
+                fragmentClassAndBundle.second
+            )
         }
 
         backButton.setOnClickListener {
@@ -90,8 +91,9 @@ class VerifierFragment : Fragment(R.layout.verifier_fragment) {
             requireActivity().onBackPressed()
         }
 
-        // Init lifecycle in record view
-        recordAndProcessPhraseView.lifecycle = lifecycle
+        // Observe fragment's lifecycle
+        val lifecycleObserver = recordAndProcessPhraseView.getLifecycleObserver()
+        lifecycle.addObserver(lifecycleObserver)
     }
 
     override fun onStart() {

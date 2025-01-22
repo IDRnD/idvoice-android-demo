@@ -44,7 +44,7 @@ class VerifierViewModel(
     private val qualityCheckEngine: QualityCheckEngine
 ) : ViewModel() {
 
-    val onResultFragment = LiveEvent<Fragment>()
+    val onResultFragment = LiveEvent<Pair<Class<out Fragment>, Bundle?>>()
     val isSpeechRecorded = MutableLiveData<Unit>()
     val phraseForPronouncing = MutableLiveData<String>()
     val title = MutableLiveData<String>()
@@ -151,11 +151,11 @@ class VerifierViewModel(
                     // Checks speech liveness.
                     val livenessResult = livenessEngine.checkLiveness(speechBytes, sampleRate)
 
-                    // Get fragment to show results.
-                    val resultFragment = BiometricsResultFragment()
+                    // Get fragment class to show results.
+                    val resultFragmentClass = BiometricsResultFragment::class.java
 
                     // Add results in bundle.
-                    resultFragment.arguments = Bundle().apply {
+                    val arguments = Bundle().apply {
                         putFloat(BUNDLE_VERIFICATION_PROBABILITY, verifyResult.probability)
                         putFloat(BUNDLE_LIVENESS_PROBABILITY, livenessResult.value.probability)
                         // Define whether multiple speakers detected warning will be visible or not
@@ -165,7 +165,7 @@ class VerifierViewModel(
                     }
 
                     // Send fragment to UI.
-                    onResultFragment.postValue(resultFragment)
+                    onResultFragment.postValue(Pair(resultFragmentClass, arguments))
 
                     // Signal UI that processing is finished.
                     state.postValue(ProcessIsFinished)
